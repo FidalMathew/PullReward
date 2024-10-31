@@ -114,6 +114,8 @@ function OktoLoginPage() {
   ];
 
   const transactions = async () => {
+
+    console.log(wallets, "wallets");
     try {
       if (wallets !== undefined) {
         const tx = await executeRawTransaction({
