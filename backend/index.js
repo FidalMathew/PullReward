@@ -5,6 +5,9 @@ dotenv.config();
 const {isPRLinkedToIssueAndMerged} = require('./controller');
 app.use(express.json());
 
+const port = process.env.PORT || 3001;
+
+
 
 app.get('/api', (req, res) => {
     res.json({ message: 'Hello from server!' });
@@ -18,7 +21,7 @@ app.post('/verifyPR', async(req,res)=>{
     // return res.json({result: 'success'}).status(200);
 })
 
-app.listen(8000, () => {
-    console.log('Server listening on port 8000');
+app.listen(port, () => {
+    console.log('Server listening on port ' + port);
 } );
 
