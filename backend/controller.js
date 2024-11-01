@@ -59,9 +59,9 @@ async function isPRLinkedToIssueAndMerged(prUrl, issueUrl) {
 
     // Check if the PR exists in the search results and is merged
     if (matchingPRs && matchingPRs.pull_request.merged_at) {
-      return 1;
+      return "5";
     } else {
-      return 0;
+      return "1";
     }
   } catch (error) {
     console.error(`Error checking PR status: ${error.message}`);
