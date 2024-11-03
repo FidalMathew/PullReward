@@ -1,0 +1,131 @@
+      <Tabs defaultValue="account" className="">
+          <TabsList>
+            <TabsTrigger value="account">Account</TabsTrigger>
+            <TabsTrigger value="password">Password</TabsTrigger>
+          </TabsList>
+          <TabsContent value="account">
+            <div className="w-full h-full border-2 border-slate-800 rounded-xl px-5">
+              <Table className="">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Labels</TableHead>
+                    <TableHead>Incentive</TableHead>
+                    <TableHead className="flex justify-end items-center">
+                      Action
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {issues.map((issue) => (
+                    <TableRow key={issue.id}>
+                      <TableCell>{issue.id}</TableCell>
+                      <TableCell>{issue.title}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            issue.status === "open" ? "default" : "secondary"
+                          }
+                        >
+                          {issue.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {issue.labels.map((label) => (
+                          <Badge key={label} variant="outline" className="mr-1">
+                            {label}
+                          </Badge>
+                        ))}
+                      </TableCell>
+                      <TableCell>
+                        {/* @ts-ignore */}
+                        {issue.incentive
+                          ? // @ts-ignore
+                            `$${issue.incentive.toFixed(2)}`
+                          : "-"}
+                      </TableCell>
+                      <TableCell className="items-center justify-end flex">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedIssue(issue)}
+                            >
+                              <Plus className="mr-2 h-4 w-4" /> Add Incentive
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-[425px]">
+                            <DialogHeader>
+                              <DialogTitle>Add Incentive</DialogTitle>
+                              <DialogDescription>
+                                Set an incentive amount for solving this issue.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                              <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="amount" className="text-right">
+                                  Amount ($)
+                                </Label>
+                                <Input
+                                  id="amount"
+                                  type="number"
+                                  // value={incentiveAmount}
+                                  // onChange={(e) => setIncentiveAmount(e.target.value)}
+                                  className="col-span-3"
+                                />
+                              </div>
+                            </div>
+                            <DialogFooter>
+                              <Button
+                                type="submit"
+                                // onClick={addIncentive}
+                              >
+                                Add Incentive
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+          <TabsContent value="password">Change your password here.</TabsContent>
+        </Tabs>
+
+
+          <Table className="h-full">
+            <TableHeader className="sticky top-0 z-10 bg-background">
+              <TableRow className="flex custom-header-height items-center">
+                <TableHead className="flex-[0_0_200px] pl-5 ">ID</TableHead>
+                <TableHead className="flex-1">Issue</TableHead>
+                <TableHead className="flex-1 ">Status</TableHead>
+                <TableHead className="flex-[0_0_300px]">Incentive</TableHead>
+                <TableHead className="flex-[0_0_100px] text-right pr-5">
+                  Action
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="block max-h-full overflow-y-auto">
+              {Array.from({length: 10}).map((_, index) => (
+                <TableRow key={index} className="flex custom-row-height">
+                  <TableCell className="flex-[0_0_200px] pl-5">
+                    {index + 1}
+                  </TableCell>
+                  <TableCell className="flex-1">{"item.name"}</TableCell>
+                  <TableCell className="flex-1">
+                    <Badge className="bg-green-600">Done</Badge>
+                  </TableCell>
+                  <TableCell className="flex-[0_0_300px] pl-8">-</TableCell>
+                  <TableCell className="flex-[0_0_100px] text-right pr-5">
+                    {"item.stock"}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>

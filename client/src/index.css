@@ -64,3 +64,11 @@
     @apply bg-background text-foreground;
   }
 }
+
+.custom-row-height {
+  height: 80px; /* Adjust the height as needed */
+}
+
+.custom-header-height {
+  height: 65px; /* Adjust the height as needed */
+}

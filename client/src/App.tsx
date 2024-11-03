@@ -2,8 +2,10 @@ import {BrowserRouter, Route, Routes} from "react-router-dom";
 import HomePage from "./Home";
 import {BuildType, OktoProvider} from "okto-sdk-react";
 import {GoogleOAuthProvider} from "@react-oauth/google";
-import AAContextProvider from "./Context/AAContext";
+import GlobalContextProvider from "./Context/GlobalContext";
 import OktoLoginPage from "./OktoLogin";
+import {ParticleConnectkit} from "./lib/ParticleConfig";
+import Connect from "./connect";
 
 function App() {
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID!;
@@ -14,15 +16,18 @@ function App() {
         buildType={BuildType.SANDBOX}
       >
         <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-          <AAContextProvider>
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/oktologin" element={<OktoLoginPage />} />
-                <Route path="*" element={<div>Not Found</div>} />
-              </Routes>
-            </BrowserRouter>
-          </AAContextProvider>
+          <ParticleConnectkit>
+            <GlobalContextProvider>
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/oktologin" element={<OktoLoginPage />} />
+                  <Route path="/connect" element={<Connect />} />
+                  <Route path="*" element={<div>Not Found</div>} />
+                </Routes>
+              </BrowserRouter>
+            </GlobalContextProvider>
+          </ParticleConnectkit>
         </GoogleOAuthProvider>
       </OktoProvider>
     </>
