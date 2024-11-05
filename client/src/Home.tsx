@@ -1,7 +1,7 @@
 import {useAuthCore, useConnect, useEthereum} from "@particle-network/authkit";
 import {useEffect, useState} from "react";
 import useGlobalContext from "./Context/useGlobalContext";
-import {encodeFunctionData, Hex} from "viem";
+import {encodeFunctionData, formatUnits, Hex} from "viem";
 import {baseSepolia} from "viem/chains";
 import {
   Table,
@@ -12,23 +12,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {Badge} from "@/components/ui/badge";
-import {ArrowRight, Plus, Search} from "lucide-react";
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
 import Navbar from "./components/Navbar";
 import axios from "axios";
 import {ReloadIcon} from "@radix-ui/react-icons";
 import {ErrorMessage, Field, Form, Formik} from "formik";
-import * as Yup from "yup";
+
 import {useNavigate} from "react-router-dom";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
 import {
   Dialog,
   DialogContent,
@@ -91,7 +83,7 @@ const mockIssues = [
 ];
 
 const Home = () => {
-  const {transmitDataRequest, getAllIssues, getIssueDetails} =
+  const {transmitDataRequest, getAllIssues, getIssueDetails, createIssue} =
     useGlobalContext();
 
   const {connect, disconnect, connected, connectionStatus} = useConnect();
@@ -107,12 +99,61 @@ const Home = () => {
     }
   }, [connected]);
 
+  function parseGitHubIssueUrl(url: string | URL) {
+    // Remove the base GitHub URL part
+    const pathParts = new URL(url).pathname.split('/');
+  
+    // Extract the owner, repo, and issue number from the URL path
+    const owner = pathParts[1];        // "mui"
+    const repo = pathParts[2];         // "material-ui"
+    const issueNumber = pathParts[4];  // "44130"
+  
+    return { owner, repo, issueNumber };
+  }
+
   useEffect(() => {
     const fetchIssues = async () => {
       if (connected) {
         // await switchChain(84532);
-        const data = await getAllIssues();
-        console.log("getAllIssues", data);
+        const res_issues = await getAllIssues();
+        console.log("getAllIssues", res_issues);
+
+        // for( issue: res_issues){
+
+        //   const { owner, repo, issueNumber } = parseGitHubIssueUrl(issue.issueUrl);
+        // }
+
+        const temp:any[] =[];
+        for (const issue of res_issues as unknown as any[]) {
+
+          console.log(issue, "issue----");
+          const { owner, repo, issueNumber } = parseGitHubIssueUrl(issue.issueUrl);
+
+          const {data} = await axios.get(
+            `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}`,
+            {
+              headers: {
+                Accept: "application/vnd.github+json",
+                Authorization: `Bearer ${import.meta.env.VITE_GITHUB_TOKEN}`,
+                "X-GitHub-Api-Version": "2022-11-28",
+              },
+            }
+          );
+        
+          console.log(data, "data");
+
+          temp.push({
+            id: issue.id,
+            title: data.title,
+            state: issue.merged? "closed": "open",
+            incentive: formatUnits(issue.bounty, 18),
+            labels: data.labels.map((label: any) => label.name),
+          })
+        }
+
+        console.log(temp, "temp");
+        setGithubIssues(temp);
+        // setIssues(data);
       }
     };
     fetchIssues();
@@ -226,6 +267,8 @@ const Home = () => {
   //   }
   // }
 
+
+
   const [verifyDialog, setVerifyDialog] = useState(false);
   const [bountyModal, setBountyModal] = useState(false);
 
@@ -273,7 +316,14 @@ const Home = () => {
             <DialogDescription>
               <Formik
                 initialValues={{issueUrl: "", bountyAmount: 0}}
-                onSubmit={(values, _) => console.log(values)}
+                onSubmit={(values, _) => {
+                  // convert bounty amount to wei
+
+                  // console.log(values.bountyAmount, "bountyAmount");
+                  createIssue(values.issueUrl, values.bountyAmount.toString());
+                  // console.log(values)
+                
+                }}
               >
                 {(formik) => (
                   <Form className="flex flex-col gap-4 pt-4">
@@ -418,28 +468,18 @@ const Home = () => {
                         <Badge className="bg-red-600">Closed</Badge>
                       )}
                     </TableCell>
-                    <TableCell className="text-center">-</TableCell>
+                    <TableCell className="text-center">{item.incentive} ETH</TableCell>
                     <TableCell className="text-right pr-8">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger>
+                  
                           <Button
                             disabled={item.state === "closed"}
-                            size="icon"
                             className="px-4 border border-slate-500"
                             variant={"outline"}
-                          >
-                            <ArrowRight className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuItem>Drop Incentive</DropdownMenuItem>
-                          <DropdownMenuItem
                             onClick={() => setVerifyDialog(true)}
                           >
                             Verify PR
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                          </Button>
+                        
                     </TableCell>
                   </TableRow>
                 ))}

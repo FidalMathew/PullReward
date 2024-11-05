@@ -5,6 +5,7 @@ import {
   createPublicClient,
   createWalletClient,
   custom,
+  parseUnits,
   PublicClient,
   WalletClient,
 } from "viem";
@@ -16,7 +17,7 @@ import axios from "axios";
 export const GlobalContext = createContext({
   walletClient: null as WalletClient | null,
   publicClient: null as PublicClient | null,
-  createIssue: (_issueUrl: string, _bountyAmount: bigint) => {},
+  createIssue: (_issueUrl: string, _bountyAmount: string) => {},
   getIssueDetails: (_issueId: number) => {},
   transmitDataRequest: (_issueId: number, _inputValue: string) => {},
   getLatestAnswerForIssue: (_issueId: number) => {},
@@ -69,8 +70,11 @@ export default function GlobalContextProvider({
     }
   }, [address]);
 
-  const createIssue = async (issueUrl: string, bountyAmount: bigint) => {
+  const createIssue = async (issueUrl: string, bountyAmount: string) => {
     try {
+
+      const bountyAmountInWei = parseUnits(bountyAmount, 18);
+      
       if (publicClient && walletClient) {
         const tx = await walletClient.writeContract({
           address: CONTRACT_ADDRESS,
@@ -78,7 +82,7 @@ export default function GlobalContextProvider({
           functionName: "createIssue",
           account: loggedInAddress as `0x${string}`,
           args: [issueUrl],
-          value: bountyAmount, // Bounty amount in wei
+          value: bountyAmountInWei, // Bounty amount in wei
           chain: baseSepolia,
         });
 
