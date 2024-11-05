@@ -21,6 +21,23 @@ import {ReloadIcon} from "@radix-ui/react-icons";
 import {ErrorMessage, Field, Form, Formik} from "formik";
 import * as Yup from "yup";
 import {useNavigate} from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {Label} from "./components/ui/label";
 
 const abi = [
   {
@@ -190,9 +207,44 @@ const Home = () => {
     }
   }
 
+  const [verifyDialog, setVerifyDialog] = useState(false);
+
   return (
     <div className="h-screen w-full">
       <Navbar />
+
+      <Dialog open={verifyDialog} onOpenChange={setVerifyDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Verify PR</DialogTitle>
+            <DialogDescription>
+              <Formik initialValues={{prLink: ""}} onSubmit={() => {}}>
+                {(formik) => (
+                  <Form className="flex flex-col gap-4">
+                    <div className="my-5 mb-3 flex flex-col w-full gap-4">
+                      <Label htmlFor="prLink">Enter your PR Link</Label>
+                      <Field
+                        as={Input}
+                        name="prLink"
+                        id="prLink"
+                        placeholder="Enter your PR Link"
+                        className={`bg-white max-w-2xl focus-visible:ring-0 ${
+                          formik.errors.prLink && formik.touched.prLink
+                            ? "border-red-500"
+                            : "border-gray-300"
+                        }`}
+                      />
+                    </div>
+                    <Button type="submit" size="lg" className="w-full">
+                      Verify PR
+                    </Button>
+                  </Form>
+                )}
+              </Formik>
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
 
       <div
         className="w-full flex flex-col p-4 gap-5"
@@ -239,7 +291,7 @@ const Home = () => {
               </div>
 
               <Button size="icon" className="px-4" type="submit">
-                <Search className="h-4 w-4" />
+                <Search className="h-4 w-4 shadow-none" />
               </Button>
 
               {githubIssues && githubIssues.length > 0 && (
@@ -288,13 +340,26 @@ const Home = () => {
                     </TableCell>
                     <TableCell className="text-center">-</TableCell>
                     <TableCell className="text-right pr-8">
-                      <Button
-                        size="icon"
-                        className="px-4 border border-slate-500"
-                        variant={"outline"}
-                      >
-                        <ArrowRight className="h-4 w-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger>
+                          <Button
+                            disabled={item.state === "closed"}
+                            size="icon"
+                            className="px-4 border border-slate-500"
+                            variant={"outline"}
+                          >
+                            <ArrowRight className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem>Drop Incentive</DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setVerifyDialog(true)}
+                          >
+                            Verify PR
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}
