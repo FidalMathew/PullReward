@@ -1,0 +1,265 @@
+[
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_sedaProverContract",
+				"type": "address"
+			},
+			{
+				"internalType": "bytes32",
+				"name": "_oracleProgramId",
+				"type": "bytes32"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "issueUrl",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "createdBy",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "bounty",
+				"type": "uint256"
+			}
+		],
+		"name": "IssueCreated",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "bool",
+				"name": "merged",
+				"type": "bool"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "contributor",
+				"type": "address"
+			}
+		],
+		"name": "IssueUpdated",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_issueUrl",
+				"type": "string"
+			}
+		],
+		"name": "createIssue",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "dataRequestId",
+		"outputs": [
+			{
+				"internalType": "bytes32",
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getAllIssues",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "uint256",
+						"name": "id",
+						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "issueUrl",
+						"type": "string"
+					},
+					{
+						"internalType": "bool",
+						"name": "merged",
+						"type": "bool"
+					},
+					{
+						"internalType": "address",
+						"name": "contributor",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "bounty",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "createdBy",
+						"type": "address"
+					}
+				],
+				"internalType": "struct PriceFeed.Issue[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "issueId",
+				"type": "uint256"
+			}
+		],
+		"name": "getIssueById",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "uint256",
+						"name": "id",
+						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "issueUrl",
+						"type": "string"
+					},
+					{
+						"internalType": "bool",
+						"name": "merged",
+						"type": "bool"
+					},
+					{
+						"internalType": "address",
+						"name": "contributor",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "bounty",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "createdBy",
+						"type": "address"
+					}
+				],
+				"internalType": "struct PriceFeed.Issue",
+				"name": "",
+				"type": "tuple"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "issueId",
+				"type": "uint256"
+			}
+		],
+		"name": "latestAnswerIssueId",
+		"outputs": [
+			{
+				"internalType": "uint128",
+				"name": "",
+				"type": "uint128"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "oracleProgramId",
+		"outputs": [
+			{
+				"internalType": "bytes32",
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "sedaProverContract",
+		"outputs": [
+			{
+				"internalType": "contract SedaProver",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "issueId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "val",
+				"type": "string"
+			}
+		],
+		"name": "transmit",
+		"outputs": [
+			{
+				"internalType": "bytes32",
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	}
+]

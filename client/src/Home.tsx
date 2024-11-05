@@ -91,6 +91,10 @@ const mockIssues = [
 ];
 
 const Home = () => {
+
+
+  const {transmitDataRequest, getAllIssues} = useGlobalContext();
+
   const {connect, disconnect, connected, connectionStatus} = useConnect();
   const {address, chainInfo, switchChain, sendTransaction} = useEthereum();
   const {userInfo} = useAuthCore();
@@ -103,6 +107,20 @@ const Home = () => {
       navigate("/connect");
     }
   }, [connected]);
+
+
+  useEffect(() => {
+    const fetchIssues = async () => {
+      if (connected) {
+        // await switchChain(84532);
+        const data = await getAllIssues();
+        console.log("getAllIssues", data);
+      }
+    }
+    fetchIssues();
+  }, [connected])
+  
+
 
   // const addIncentive = () => {
   //   if (selectedIssue && incentiveAmount) {
@@ -366,6 +384,8 @@ const Home = () => {
               </TableBody>
             </Table>
           )}
+
+          {/* <Button onClick={()=>}> Hello</Button> */}
 
           <div className="">
             {githubIssues && githubIssues.length === 0 && !loading && (
