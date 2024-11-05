@@ -8,9 +8,10 @@ import {
   PublicClient,
   WalletClient,
 } from "viem";
-import { baseSepolia } from "viem/chains";
-import CONTRACT_ABI from '@/lib/abi.json'
-import { CONTRACT_ADDRESS } from '@/lib/constants'
+import {baseSepolia} from "viem/chains";
+import CONTRACT_ABI from "@/lib/abi.json";
+import {CONTRACT_ADDRESS} from "@/lib/constants";
+import axios from "axios";
 
 export const GlobalContext = createContext({
   walletClient: null as WalletClient | null,
@@ -34,7 +35,6 @@ export default function GlobalContextProvider({
   const [publicClient, setPublicClient] = useState<PublicClient | null>(null);
 
   const [loggedInAddress, setLoggedInAddress] = useState<string>();
-
 
   useEffect(() => {
     if (connectionStatus === "connected" && provider && address) {
@@ -62,14 +62,12 @@ export default function GlobalContextProvider({
     }
   }, [provider, connectionStatus]);
 
-
   useEffect(() => {
     if (address) {
       console.log("Address:", address);
       setLoggedInAddress(address);
     }
   }, [address]);
-
 
   const createIssue = async (issueUrl: string, bountyAmount: bigint) => {
     try {
@@ -83,12 +81,13 @@ export default function GlobalContextProvider({
           value: bountyAmount, // Bounty amount in wei
           chain: baseSepolia,
         });
-  
-        await publicClient.waitForTransactionReceipt({ hash: tx });
+
+        await publicClient.waitForTransactionReceipt({hash: tx});
         console.log("Issue created successfully");
       }
     } catch (error) {
       console.error("Error creating issue:", error);
+      return [];
     }
   };
 
@@ -101,15 +100,15 @@ export default function GlobalContextProvider({
           functionName: "getAllIssues",
           args: [], // No arguments needed for this function
         });
-  
+
         console.log(data, "All Issues");
+
         return data as any[]; // Type appropriately based on the expected structure of issues array
       }
     } catch (error) {
       console.error("Error fetching all issues:", error);
     }
   };
-  
 
   const getIssueDetails = async (issueId: number) => {
     try {
@@ -120,7 +119,7 @@ export default function GlobalContextProvider({
           functionName: "getIssueById",
           args: [issueId],
         });
-  
+
         console.log(data, `Issue Details for ID ${issueId}`);
         return data as any; // Type appropriately based on expected result structure
       }
@@ -129,7 +128,6 @@ export default function GlobalContextProvider({
     }
   };
 
-  
   const transmitDataRequest = async (issueId: number, inputValue: string) => {
     try {
       if (publicClient && walletClient) {
@@ -141,8 +139,8 @@ export default function GlobalContextProvider({
           args: [issueId, inputValue],
           chain: baseSepolia,
         });
-  
-        await publicClient.waitForTransactionReceipt({ hash: tx });
+
+        await publicClient.waitForTransactionReceipt({hash: tx});
         console.log("Data request transmitted successfully");
       }
     } catch (error) {
@@ -150,7 +148,6 @@ export default function GlobalContextProvider({
     }
   };
 
-  
   const getLatestAnswerForIssue = async (issueId: number) => {
     try {
       if (publicClient) {
@@ -160,7 +157,7 @@ export default function GlobalContextProvider({
           functionName: "latestAnswerIssueId",
           args: [issueId],
         });
-  
+
         console.log(data, `Latest answer for issue ID ${issueId}`);
         return data as any; // Type appropriately based on expected result structure
       }
@@ -168,10 +165,35 @@ export default function GlobalContextProvider({
       console.error("Error fetching the latest answer:", error);
     }
   };
-  
-  
 
-  
+  async function fetchIssues(
+    owner = "shadcn-ui",
+    repo = "next-template",
+    issueNumber: number
+  ) {
+    try {
+      const {data} = await axios.get(
+        `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}`,
+        {
+          headers: {
+            Accept: "application/vnd.github+json",
+            Authorization: `Bearer ${import.meta.env.VITE_GITHUB_TOKEN}`,
+            "X-GitHub-Api-Version": "2022-11-28",
+          },
+        }
+      );
+
+      if (data) {
+        const data1 = data.filter(
+          (issues: any) => !issues.hasOwnProperty("pull_request")
+        );
+
+        console.log(data1, "data1");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
 
   return (
     <GlobalContext.Provider

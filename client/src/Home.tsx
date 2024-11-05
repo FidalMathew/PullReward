@@ -91,9 +91,8 @@ const mockIssues = [
 ];
 
 const Home = () => {
-
-
-  const {transmitDataRequest, getAllIssues} = useGlobalContext();
+  const {transmitDataRequest, getAllIssues, getIssueDetails} =
+    useGlobalContext();
 
   const {connect, disconnect, connected, connectionStatus} = useConnect();
   const {address, chainInfo, switchChain, sendTransaction} = useEthereum();
@@ -108,7 +107,6 @@ const Home = () => {
     }
   }, [connected]);
 
-
   useEffect(() => {
     const fetchIssues = async () => {
       if (connected) {
@@ -116,11 +114,9 @@ const Home = () => {
         const data = await getAllIssues();
         console.log("getAllIssues", data);
       }
-    }
+    };
     fetchIssues();
-  }, [connected])
-  
-
+  }, [connected]);
 
   // const addIncentive = () => {
   //   if (selectedIssue && incentiveAmount) {
@@ -193,39 +189,45 @@ const Home = () => {
     }
   };
 
-  const [githubIssues, setGithubIssues] = useState<any>([]);
   const [loading, setLoading] = useState(false);
-  async function fetchIssues(owner = "shadcn-ui", repo = "next-template") {
-    setLoading(true);
-    try {
-      const {data} = await axios.get(
-        `https://api.github.com/repos/${owner}/${repo}/issues?state=all`,
-        {
-          headers: {
-            Accept: "application/vnd.github+json",
-            Authorization: `Bearer ${import.meta.env.VITE_GITHUB_TOKEN}`,
-            "X-GitHub-Api-Version": "2022-11-28",
-          },
-        }
-      );
+  const [githubIssues, setGithubIssues] = useState<any>([]);
 
-      if (data) {
-        const data1 = data.filter(
-          (issues: any) => !issues.hasOwnProperty("pull_request")
-        );
+  // async function fetchIssues(
+  //   owner = "shadcn-ui",
+  //   repo = "next-template",
+  //   issueNumber: number
+  // ) {
+  //   setLoading(true);
+  //   try {
+  //     const {data} = await axios.get(
+  //       `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}`,
+  //       {
+  //         headers: {
+  //           Accept: "application/vnd.github+json",
+  //           Authorization: `Bearer ${import.meta.env.VITE_GITHUB_TOKEN}`,
+  //           "X-GitHub-Api-Version": "2022-11-28",
+  //         },
+  //       }
+  //     );
 
-        setGithubIssues(data1);
+  //     if (data) {
+  //       const data1 = data.filter(
+  //         (issues: any) => !issues.hasOwnProperty("pull_request")
+  //       );
 
-        console.log(data1, "data1");
-      }
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false);
-    }
-  }
+  //       setGithubIssues(data1);
+
+  //       console.log(data1, "data1");
+  //     }
+  //   } catch (error) {
+  //     console.log(error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }
 
   const [verifyDialog, setVerifyDialog] = useState(false);
+  const [bountyModal, setBountyModal] = useState(false);
 
   return (
     <div className="h-screen w-full">
@@ -264,11 +266,62 @@ const Home = () => {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={bountyModal} onOpenChange={setBountyModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Drop Bounty on Issue</DialogTitle>
+            <DialogDescription>
+              <Formik
+                initialValues={{issueUrl: "", bountyAmount: 0}}
+                onSubmit={(values, _) => console.log(values)}
+              >
+                {(formik) => (
+                  <Form className="flex flex-col gap-4 pt-4">
+                    <div className="flex flex-col w-full gap-4">
+                      <Label htmlFor="issueUrl">Issue Link</Label>
+                      <Field
+                        as={Input}
+                        name="issueUrl"
+                        id="issueUrl"
+                        placeholder="Enter your Issue Link"
+                        className={`bg-white max-w-2xl focus-visible:ring-0 ${
+                          formik.errors.issueUrl && formik.touched.issueUrl
+                            ? "border-red-500"
+                            : "border-gray-300"
+                        }`}
+                      />
+                    </div>
+                    <div className="flex flex-col w-full gap-4">
+                      <Label htmlFor="issueUrl">Bounty Amount</Label>
+                      <Field
+                        as={Input}
+                        name="bountyAmount"
+                        id="bountyAmount"
+                        placeholder="Enter Bounty Amount"
+                        className={`bg-white max-w-2xl focus-visible:ring-0 ${
+                          formik.errors.bountyAmount &&
+                          formik.touched.bountyAmount
+                            ? "border-red-500"
+                            : "border-gray-300"
+                        }`}
+                      />
+                    </div>
+                    <Button type="submit" size="lg" className="w-full">
+                      Submit
+                    </Button>
+                  </Form>
+                )}
+              </Formik>
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+
       <div
-        className="w-full flex flex-col p-4 gap-5"
+        className="w-full flex flex-col p-4 gap-5 justify-end"
         style={{height: "calc(100vh - 90px)"}}
       >
-        <Formik
+        {/* <Formik
           initialValues={{repoLink: ""}}
           onSubmit={async (values, _) => {
             const arr = values.repoLink.split("/");
@@ -299,7 +352,7 @@ const Home = () => {
                       : "border-gray-300"
                   }`}
                 />
-                {/* Error message positioned under the input field */}
+
 
                 <ErrorMessage name="repoLink">
                   {(msg) => (
@@ -321,7 +374,16 @@ const Home = () => {
               )}
             </Form>
           )}
-        </Formik>
+            
+        </Formik> */}
+
+        <Button
+          className="w-fit"
+          variant={"outline"}
+          onClick={() => setBountyModal((prev) => !prev)}
+        >
+          Create Bounty for Issues
+        </Button>
 
         <div className="h-full w-full bg-white rounded-lg border border-slate-800 overflow-y-scroll">
           {githubIssues && loading && (
