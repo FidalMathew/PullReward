@@ -133,6 +133,7 @@ export default function GlobalContextProvider({
   };
 
   const transmitDataRequest = async (issueId: number, inputValue: string) => {
+    // inputValue = prUrl#issueUrl"
     try {
       if (publicClient && walletClient) {
         const tx = await walletClient.writeContract({

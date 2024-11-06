@@ -1,8 +1,12 @@
-import {useAuthCore, useConnect, useEthereum} from "@particle-network/authkit";
-import {useEffect, useState} from "react";
+import {
+  useAuthCore,
+  useConnect,
+  useEthereum,
+} from "@particle-network/authkit";
+import { useEffect, useState } from "react";
 import useGlobalContext from "./Context/useGlobalContext";
-import {encodeFunctionData, formatUnits, Hex} from "viem";
-import {baseSepolia} from "viem/chains";
+import { encodeFunctionData, formatUnits, Hex } from "viem";
+import { baseSepolia } from "viem/chains";
 import {
   Table,
   TableBody,
@@ -11,15 +15,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {Badge} from "@/components/ui/badge";
-import {Input} from "@/components/ui/input";
-import {Button} from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import Navbar from "./components/Navbar";
 import axios from "axios";
-import {ReloadIcon} from "@radix-ui/react-icons";
-import {ErrorMessage, Field, Form, Formik} from "formik";
+import { ReloadIcon } from "@radix-ui/react-icons";
+import { ErrorMessage, Field, Form, Formik } from "formik";
 
-import {useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import {
   Dialog,
@@ -29,7 +33,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {Label} from "./components/ui/label";
+import { Label } from "./components/ui/label";
 
 const abi = [
   {
@@ -73,7 +77,12 @@ const mockIssues = [
     status: "closed",
     labels: ["performance"],
   },
-  {id: 4, title: "Add user profile page", status: "open", labels: ["feature"]},
+  {
+    id: 4,
+    title: "Add user profile page",
+    status: "open",
+    labels: ["feature"],
+  },
   {
     id: 5,
     title: "Update documentation",
@@ -83,12 +92,12 @@ const mockIssues = [
 ];
 
 const Home = () => {
-  const {transmitDataRequest, getAllIssues, getIssueDetails, createIssue} =
+  const { transmitDataRequest, getAllIssues, getIssueDetails, createIssue } =
     useGlobalContext();
 
-  const {connect, disconnect, connected, connectionStatus} = useConnect();
-  const {address, chainInfo, switchChain, sendTransaction} = useEthereum();
-  const {userInfo} = useAuthCore();
+  const { connect, disconnect, connected, connectionStatus } = useConnect();
+  const { address, chainInfo, switchChain, sendTransaction } = useEthereum();
+  const { userInfo } = useAuthCore();
   const navigate = useNavigate();
   const [selectedIssue, setSelectedIssue] = useState<any>(null);
   const [incentiveAmount, setIncentiveAmount] = useState("");
@@ -101,13 +110,13 @@ const Home = () => {
 
   function parseGitHubIssueUrl(url: string | URL) {
     // Remove the base GitHub URL part
-    const pathParts = new URL(url).pathname.split('/');
-  
+    const pathParts = new URL(url).pathname.split("/");
+
     // Extract the owner, repo, and issue number from the URL path
-    const owner = pathParts[1];        // "mui"
-    const repo = pathParts[2];         // "material-ui"
-    const issueNumber = pathParts[4];  // "44130"
-  
+    const owner = pathParts[1]; // "mui"
+    const repo = pathParts[2]; // "material-ui"
+    const issueNumber = pathParts[4]; // "44130"
+
     return { owner, repo, issueNumber };
   }
 
@@ -123,13 +132,14 @@ const Home = () => {
         //   const { owner, repo, issueNumber } = parseGitHubIssueUrl(issue.issueUrl);
         // }
 
-        const temp:any[] =[];
+        const temp: any[] = [];
         for (const issue of res_issues as unknown as any[]) {
-
           console.log(issue, "issue----");
-          const { owner, repo, issueNumber } = parseGitHubIssueUrl(issue.issueUrl);
+          const { owner, repo, issueNumber } = parseGitHubIssueUrl(
+            issue.issueUrl
+          );
 
-          const {data} = await axios.get(
+          const { data } = await axios.get(
             `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}`,
             {
               headers: {
@@ -139,16 +149,17 @@ const Home = () => {
               },
             }
           );
-        
+
           console.log(data, "data");
 
           temp.push({
             id: issue.id,
+            issueUrl: data.html_url,
             title: data.title,
-            state: issue.merged? "closed": "open",
+            state: issue.merged ? "closed" : "open",
             incentive: formatUnits(issue.bounty, 18),
             labels: data.labels.map((label: any) => label.name),
-          })
+          });
         }
 
         console.log(temp, "temp");
@@ -191,7 +202,7 @@ const Home = () => {
     }
   };
 
-  const {walletClient, publicClient} = useGlobalContext();
+  const { walletClient, publicClient } = useGlobalContext();
 
   const incrementCounter = async () => {
     if (walletClient && publicClient && address) {
@@ -205,7 +216,7 @@ const Home = () => {
         account: address as Hex,
       });
 
-      await publicClient.waitForTransactionReceipt({hash: tx});
+      await publicClient.waitForTransactionReceipt({ hash: tx });
 
       const counterValue = await publicClient.readContract({
         abi: abi,
@@ -267,8 +278,6 @@ const Home = () => {
   //   }
   // }
 
-
-
   const [verifyDialog, setVerifyDialog] = useState(false);
   const [bountyModal, setBountyModal] = useState(false);
 
@@ -276,53 +285,19 @@ const Home = () => {
     <div className="h-screen w-full">
       <Navbar />
 
-      <Dialog open={verifyDialog} onOpenChange={setVerifyDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Verify PR</DialogTitle>
-            <DialogDescription>
-              <Formik initialValues={{prLink: ""}} onSubmit={() => {}}>
-                {(formik) => (
-                  <Form className="flex flex-col gap-4">
-                    <div className="my-5 mb-3 flex flex-col w-full gap-4">
-                      <Label htmlFor="prLink">Enter your PR Link</Label>
-                      <Field
-                        as={Input}
-                        name="prLink"
-                        id="prLink"
-                        placeholder="Enter your PR Link"
-                        className={`bg-white max-w-2xl focus-visible:ring-0 ${
-                          formik.errors.prLink && formik.touched.prLink
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        }`}
-                      />
-                    </div>
-                    <Button type="submit" size="lg" className="w-full">
-                      Verify PR
-                    </Button>
-                  </Form>
-                )}
-              </Formik>
-            </DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
-
       <Dialog open={bountyModal} onOpenChange={setBountyModal}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Drop Bounty on Issue</DialogTitle>
             <DialogDescription>
               <Formik
-                initialValues={{issueUrl: "", bountyAmount: 0}}
+                initialValues={{ issueUrl: "", bountyAmount: 0 }}
                 onSubmit={(values, _) => {
                   // convert bounty amount to wei
 
                   // console.log(values.bountyAmount, "bountyAmount");
                   createIssue(values.issueUrl, values.bountyAmount.toString());
                   // console.log(values)
-                
                 }}
               >
                 {(formik) => (
@@ -369,7 +344,7 @@ const Home = () => {
 
       <div
         className="w-full flex flex-col p-4 gap-5 justify-end"
-        style={{height: "calc(100vh - 90px)"}}
+        style={{ height: "calc(100vh - 90px)" }}
       >
         {/* <Formik
           initialValues={{repoLink: ""}}
@@ -454,34 +429,81 @@ const Home = () => {
               </TableHeader>
               <TableBody className="min-h-[300px]">
                 {githubIssues.map((item: any, index: number) => (
-                  <TableRow className="py-6 custom-row-height" key={index}>
-                    <TableCell className="font-medium pl-8  ">
-                      {index + 1}
-                    </TableCell>
-                    <TableCell className="max-w-[200px] whitespace-normal overflow-hidden text-ellipsis">
-                      {item.title}
-                    </TableCell>
-                    <TableCell>
-                      {item.state === "open" ? (
-                        <Badge className="bg-green-600">Open</Badge>
-                      ) : (
-                        <Badge className="bg-red-600">Closed</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-center">{item.incentive} ETH</TableCell>
-                    <TableCell className="text-right pr-8">
-                  
-                          <Button
-                            disabled={item.state === "closed"}
-                            className="px-4 border border-slate-500"
-                            variant={"outline"}
-                            onClick={() => setVerifyDialog(true)}
-                          >
-                            Verify PR
-                          </Button>
-                        
-                    </TableCell>
-                  </TableRow>
+                  <>
+                    <Dialog open={verifyDialog} onOpenChange={setVerifyDialog}>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Verify PR</DialogTitle>
+                          <DialogDescription>
+                            <Formik
+                              initialValues={{ prLink: "" }}
+                              onSubmit={(values, _) => {
+                                const inputValue = values.prLink+"#"+item.issueUrl;
+                                transmitDataRequest(item.id, inputValue);
+                              }}
+                            >
+                              {(formik) => (
+                                <Form className="flex flex-col gap-4">
+                                  <div className="my-5 mb-3 flex flex-col w-full gap-4">
+                                    <Label htmlFor="prLink">
+                                      Enter your PR Link
+                                    </Label>
+                                    <Field
+                                      as={Input}
+                                      name="prLink"
+                                      id="prLink"
+                                      placeholder="Enter your PR Link"
+                                      className={`bg-white max-w-2xl focus-visible:ring-0 ${
+                                        formik.errors.prLink &&
+                                        formik.touched.prLink
+                                          ? "border-red-500"
+                                          : "border-gray-300"
+                                      }`}
+                                    />
+                                  </div>
+                                  <Button
+                                    type="submit"
+                                    size="lg"
+                                    className="w-full"
+                                  >
+                                    Verify PR
+                                  </Button>
+                                </Form>
+                              )}
+                            </Formik>
+                          </DialogDescription>
+                        </DialogHeader>
+                      </DialogContent>
+                    </Dialog>
+                    <TableRow className="py-6 custom-row-height" key={index}>
+                      <TableCell className="font-medium pl-8  ">
+                        {index + 1}
+                      </TableCell>
+                      <TableCell className="max-w-[200px] whitespace-normal overflow-hidden text-ellipsis">
+                        {item.title}
+                      </TableCell>
+                      <TableCell>
+                        {item.state === "open" ? (
+                          <Badge className="bg-green-600">Open</Badge>
+                        ) : (
+                          <Badge className="bg-red-600">Closed</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {item.incentive} ETH
+                      </TableCell>
+                      <TableCell className="text-right pr-8">
+                        <Button
+                          disabled={item.state === "closed"}
+                          className="px-4 border border-slate-500"
+                          variant={"outline"}
+                          onClick={() => setVerifyDialog(true)}
+                        >
+                          Verify PR
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  </>
                 ))}
               </TableBody>
             </Table>
