@@ -1,12 +1,7 @@
-import {
-  useAuthCore,
-  useConnect,
-  useEthereum,
-} from "@particle-network/authkit";
-import { useEffect, useState } from "react";
+import {useAuthCore, useConnect} from "@particle-network/authkit";
+import {useEffect, useState} from "react";
 import useGlobalContext from "./Context/useGlobalContext";
-import { encodeFunctionData, formatUnits, Hex } from "viem";
-import { baseSepolia } from "viem/chains";
+import {formatUnits} from "viem";
 import {
   Table,
   TableBody,
@@ -15,15 +10,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import {Badge} from "@/components/ui/badge";
+import {Input} from "@/components/ui/input";
+import {Button} from "@/components/ui/button";
 import Navbar from "./components/Navbar";
 import axios from "axios";
-import { ReloadIcon } from "@radix-ui/react-icons";
-import { ErrorMessage, Field, Form, Formik } from "formik";
-
-import { useNavigate } from "react-router-dom";
+import {ReloadIcon} from "@radix-ui/react-icons";
+import {Field, Form, Formik} from "formik";
+import {CircleCheck, CircleX} from "lucide-react";
+import {useNavigate} from "react-router-dom";
 
 import {
   Dialog,
@@ -31,76 +26,74 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "./components/ui/label";
+import {Label} from "./components/ui/label";
 
-const abi = [
-  {
-    inputs: [],
-    name: "increment",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "getCounterValue",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-];
+// const abi = [
+//   {
+//     inputs: [],
+//     name: "increment",
+//     outputs: [],
+//     stateMutability: "nonpayable",
+//     type: "function",
+//   },
+//   {
+//     inputs: [],
+//     name: "getCounterValue",
+//     outputs: [
+//       {
+//         internalType: "uint256",
+//         name: "",
+//         type: "uint256",
+//       },
+//     ],
+//     stateMutability: "view",
+//     type: "function",
+//   },
+// ];
 
-const mockIssues = [
-  {
-    id: 1,
-    title: "Fix login bug",
-    status: "open",
-    labels: ["bug", "high-priority"],
-  },
-  {
-    id: 2,
-    title: "Implement dark mode",
-    status: "open",
-    labels: ["feature", "ui"],
-  },
-  {
-    id: 3,
-    title: "Optimize database queries",
-    status: "closed",
-    labels: ["performance"],
-  },
-  {
-    id: 4,
-    title: "Add user profile page",
-    status: "open",
-    labels: ["feature"],
-  },
-  {
-    id: 5,
-    title: "Update documentation",
-    status: "open",
-    labels: ["documentation"],
-  },
-];
+// const mockIssues = [
+//   {
+//     id: 1,
+//     title: "Fix login bug",
+//     status: "open",
+//     labels: ["bug", "high-priority"],
+//   },
+//   {
+//     id: 2,
+//     title: "Implement dark mode",
+//     status: "open",
+//     labels: ["feature", "ui"],
+//   },
+//   {
+//     id: 3,
+//     title: "Optimize database queries",
+//     status: "closed",
+//     labels: ["performance"],
+//   },
+//   {
+//     id: 4,
+//     title: "Add user profile page",
+//     status: "open",
+//     labels: ["feature"],
+//   },
+//   {
+//     id: 5,
+//     title: "Update documentation",
+//     status: "open",
+//     labels: ["documentation"],
+//   },
+// ];
 
 const Home = () => {
-  const { transmitDataRequest, getAllIssues, getIssueDetails, createIssue } =
+  const {getAllIssues, shouldGiveBountyState, executeVerifyPRFunction} =
     useGlobalContext();
 
-  const { connect, disconnect, connected, connectionStatus } = useConnect();
-  const { address, chainInfo, switchChain, sendTransaction } = useEthereum();
-  const { userInfo } = useAuthCore();
+  const {connected} = useConnect();
+  const {userInfo} = useAuthCore();
   const navigate = useNavigate();
-  const [selectedIssue, setSelectedIssue] = useState<any>(null);
-  const [incentiveAmount, setIncentiveAmount] = useState("");
+  // const [selectedIssue, setSelectedIssue] = useState<any>(null);
+  // const [incentiveAmount, setIncentiveAmount] = useState("");
 
   useEffect(() => {
     if (!connected) {
@@ -117,7 +110,7 @@ const Home = () => {
     const repo = pathParts[2]; // "material-ui"
     const issueNumber = pathParts[4]; // "44130"
 
-    return { owner, repo, issueNumber };
+    return {owner, repo, issueNumber};
   }
 
   useEffect(() => {
@@ -135,11 +128,11 @@ const Home = () => {
         const temp: any[] = [];
         for (const issue of res_issues as unknown as any[]) {
           console.log(issue, "issue----");
-          const { owner, repo, issueNumber } = parseGitHubIssueUrl(
+          const {owner, repo, issueNumber} = parseGitHubIssueUrl(
             issue.issueUrl
           );
 
-          const { data } = await axios.get(
+          const {data} = await axios.get(
             `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}`,
             {
               headers: {
@@ -188,60 +181,60 @@ const Home = () => {
 
   // Handle user logout
 
-  const [toggle, setToggle] = useState(false);
+  // const [toggle, setToggle] = useState(false);
 
-  const switchChain1 = async () => {
-    if (connected) {
-      if (toggle) {
-        await switchChain(84532);
-        setToggle(false);
-      } else {
-        await switchChain(11155111);
-        setToggle(true);
-      }
-    }
-  };
+  // const switchChain1 = async () => {
+  //   if (connected) {
+  //     if (toggle) {
+  //       await switchChain(84532);
+  //       setToggle(false);
+  //     } else {
+  //       await switchChain(11155111);
+  //       setToggle(true);
+  //     }
+  //   }
+  // };
 
-  const { walletClient, publicClient } = useGlobalContext();
+  // const {walletClient, publicClient} = useGlobalContext();
 
-  const incrementCounter = async () => {
-    if (walletClient && publicClient && address) {
-      await switchChain(84532);
-      const tx = await walletClient.writeContract({
-        abi: abi,
-        functionName: "increment",
-        args: [],
-        address: "0xda7Bf9FC15d352F68b5f7793c9F75799C010A7E1",
-        chain: baseSepolia,
-        account: address as Hex,
-      });
+  // const incrementCounter = async () => {
+  //   if (walletClient && publicClient && address) {
+  //     await switchChain(84532);
+  //     const tx = await walletClient.writeContract({
+  //       abi: abi,
+  //       functionName: "increment",
+  //       args: [],
+  //       address: "0xda7Bf9FC15d352F68b5f7793c9F75799C010A7E1",
+  //       chain: baseSepolia,
+  //       account: address as Hex,
+  //     });
 
-      await publicClient.waitForTransactionReceipt({ hash: tx });
+  //     await publicClient.waitForTransactionReceipt({hash: tx});
 
-      const counterValue = await publicClient.readContract({
-        abi: abi,
-        functionName: "getCounterValue",
-        args: [],
-        address: "0xda7Bf9FC15d352F68b5f7793c9F75799C010A7E1" as Hex,
-      });
+  //     const counterValue = await publicClient.readContract({
+  //       abi: abi,
+  //       functionName: "getCounterValue",
+  //       args: [],
+  //       address: "0xda7Bf9FC15d352F68b5f7793c9F75799C010A7E1" as Hex,
+  //     });
 
-      console.log(counterValue, "counterValue");
+  //     console.log(counterValue, "counterValue");
 
-      // const tx = await sendTransaction({
-      //   to: "0xda7Bf9FC15d352F68b5f7793c9F75799C010A7E1",
-      //   data: encodeFunctionData({
-      //     abi: abi,
-      //     functionName: "increment",
-      //     args: [],
-      //   }),
-      //   value: "0x0",
-      // });
+  //     // const tx = await sendTransaction({
+  //     //   to: "0xda7Bf9FC15d352F68b5f7793c9F75799C010A7E1",
+  //     //   data: encodeFunctionData({
+  //     //     abi: abi,
+  //     //     functionName: "increment",
+  //     //     args: [],
+  //     //   }),
+  //     //   value: "0x0",
+  //     // });
 
-      // console.log(tx, "tx");
-    }
-  };
+  //     // console.log(tx, "tx");
+  //   }
+  // };
 
-  const [loading, setLoading] = useState(false);
+  const [loading, _] = useState(false);
   const [githubIssues, setGithubIssues] = useState<any>([]);
 
   // async function fetchIssues(
@@ -279,64 +272,115 @@ const Home = () => {
   // }
 
   const [verifyDialog, setVerifyDialog] = useState(false);
-  const [bountyModal, setBountyModal] = useState(false);
+  const [, setBountyModal] = useState(false);
+  const [index, setIndex] = useState(0);
+  const [openShouldGiveBountyModal, setOpenShouldGiveBountyModal] =
+    useState(false);
+
+  const [step, setStep] = useState(0);
 
   return (
     <div className="h-screen w-full">
       <Navbar />
-
-      <Dialog open={bountyModal} onOpenChange={setBountyModal}>
+      <Dialog open={verifyDialog} onOpenChange={setVerifyDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Drop Bounty on Issue</DialogTitle>
+            <DialogTitle>Verify PR</DialogTitle>
             <DialogDescription>
-              <Formik
-                initialValues={{ issueUrl: "", bountyAmount: 0 }}
-                onSubmit={(values, _) => {
-                  // convert bounty amount to wei
+              {step === 0 ? (
+                <Formik
+                  initialValues={{prLink: ""}}
+                  onSubmit={(values) => {
+                    const inputValue =
+                      values.prLink + "#" + githubIssues[index].issueUrl;
+                    console.log(inputValue, "inputValue");
+                    // setVerifyDialog(false);
+                    // setOpenShouldGiveBountyModal(true);
+                    // transmitDataRequest(githubIssues[index].id, inputValue);
 
-                  // console.log(values.bountyAmount, "bountyAmount");
-                  createIssue(values.issueUrl, values.bountyAmount.toString());
-                  // console.log(values)
-                }}
-              >
-                {(formik) => (
-                  <Form className="flex flex-col gap-4 pt-4">
-                    <div className="flex flex-col w-full gap-4">
-                      <Label htmlFor="issueUrl">Issue Link</Label>
-                      <Field
-                        as={Input}
-                        name="issueUrl"
-                        id="issueUrl"
-                        placeholder="Enter your Issue Link"
-                        className={`bg-white max-w-2xl focus-visible:ring-0 ${
-                          formik.errors.issueUrl && formik.touched.issueUrl
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        }`}
-                      />
+                    setStep(1);
+                    executeVerifyPRFunction(githubIssues[index].id, inputValue);
+                  }}
+                >
+                  {(formik) => (
+                    <Form className="flex flex-col gap-4">
+                      <div className="my-5 mb-3 flex flex-col w-full gap-4">
+                        <Label htmlFor="prLink">Enter your PR Link</Label>
+                        <Field
+                          as={Input}
+                          name="prLink"
+                          id="prLink"
+                          placeholder="Enter your PR Link"
+                          className={`bg-white max-w-2xl focus-visible:ring-0 ${
+                            formik.errors.prLink && formik.touched.prLink
+                              ? "border-red-500"
+                              : "border-gray-300"
+                          }`}
+                        />
+                      </div>
+
+                      <Button type="submit" size="lg" className="w-full">
+                        Verify PR
+                      </Button>
+                    </Form>
+                  )}
+                </Formik>
+              ) : (
+                <div className="w-full h-full flex flex-col mt-5 font-sans text-black text-left">
+                  <div className="w-full h-[80px] flex items-center px-4">
+                    <div className="flex flex-col w-full">
+                      <p className="text-xl w-full">Verify PR Owner</p>
+                      <p className="text-xs text-blue-800 max-w-sm truncate">
+                        {/* {shouldGiveBountyState.verifyPROwnerSuccess && (
+                          <a href={`${ipfsUri}`} target="_blank">
+                            {" "}
+                            {`${ipfsUri}`}
+                          </a>
+                        )} */}
+                        {shouldGiveBountyState.verifyPROwnerError && (
+                          <p className="text-red-700">
+                            {shouldGiveBountyState.verifyPROwnerError}
+                          </p>
+                        )}
+                      </p>
                     </div>
-                    <div className="flex flex-col w-full gap-4">
-                      <Label htmlFor="issueUrl">Bounty Amount</Label>
-                      <Field
-                        as={Input}
-                        name="bountyAmount"
-                        id="bountyAmount"
-                        placeholder="Enter Bounty Amount"
-                        className={`bg-white max-w-2xl focus-visible:ring-0 ${
-                          formik.errors.bountyAmount &&
-                          formik.touched.bountyAmount
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        }`}
-                      />
+                    {shouldGiveBountyState.verifyPROwnerLoading ? (
+                      <ReloadIcon className="h-5 w-5 animate-spin" />
+                    ) : shouldGiveBountyState.verifyPROwnerSuccess ? (
+                      <CircleCheck className="h-9 w-9 fill-green-700 text-white" />
+                    ) : (
+                      shouldGiveBountyState.verifyPROwnerError !== null && (
+                        <CircleX className="h-9 w-9 fill-red-700 text-white" />
+                      )
+                    )}
+                  </div>
+                  <div className="w-full h-[80px] flex items-center px-4">
+                    <div className="flex flex-col w-full">
+                      <p className="text-xl w-full">
+                        Verify Issue and PR and Connected
+                      </p>
+                      <p className="text-xs text-blue-800 max-w-sm truncate">
+                        {/* https://explorer.story.foundation/ipa/0x5Ec29EA9fFfd4176f3E09B1Eb5c163adc8744c3D */}
+                        {shouldGiveBountyState.prAndIssueMatchingError && (
+                          <p className="text-red-700">
+                            {shouldGiveBountyState.prAndIssueMatchingError}
+                          </p>
+                        )}
+                      </p>
                     </div>
-                    <Button type="submit" size="lg" className="w-full">
-                      Submit
-                    </Button>
-                  </Form>
-                )}
-              </Formik>
+                    {shouldGiveBountyState.prAndIssueMatchingLoading ? (
+                      <ReloadIcon className="h-5 w-5 animate-spin" />
+                    ) : shouldGiveBountyState.prAndIssueMatchingSuccess ? (
+                      <CircleCheck className="h-9 w-9 fill-green-700 text-white" />
+                    ) : (
+                      shouldGiveBountyState.prAndIssueMatchingError !==
+                        null && (
+                        <CircleX className="h-9 w-9 fill-red-700 text-white" />
+                      )
+                    )}
+                  </div>
+                </div>
+              )}
             </DialogDescription>
           </DialogHeader>
         </DialogContent>
@@ -344,7 +388,7 @@ const Home = () => {
 
       <div
         className="w-full flex flex-col p-4 gap-5 justify-end"
-        style={{ height: "calc(100vh - 90px)" }}
+        style={{height: "calc(100vh - 90px)"}}
       >
         {/* <Formik
           initialValues={{repoLink: ""}}
@@ -430,51 +474,6 @@ const Home = () => {
               <TableBody className="min-h-[300px]">
                 {githubIssues.map((item: any, index: number) => (
                   <>
-                    <Dialog open={verifyDialog} onOpenChange={setVerifyDialog}>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Verify PR</DialogTitle>
-                          <DialogDescription>
-                            <Formik
-                              initialValues={{ prLink: "" }}
-                              onSubmit={(values, _) => {
-                                const inputValue = values.prLink+"#"+item.issueUrl;
-                                transmitDataRequest(item.id, inputValue);
-                              }}
-                            >
-                              {(formik) => (
-                                <Form className="flex flex-col gap-4">
-                                  <div className="my-5 mb-3 flex flex-col w-full gap-4">
-                                    <Label htmlFor="prLink">
-                                      Enter your PR Link
-                                    </Label>
-                                    <Field
-                                      as={Input}
-                                      name="prLink"
-                                      id="prLink"
-                                      placeholder="Enter your PR Link"
-                                      className={`bg-white max-w-2xl focus-visible:ring-0 ${
-                                        formik.errors.prLink &&
-                                        formik.touched.prLink
-                                          ? "border-red-500"
-                                          : "border-gray-300"
-                                      }`}
-                                    />
-                                  </div>
-                                  <Button
-                                    type="submit"
-                                    size="lg"
-                                    className="w-full"
-                                  >
-                                    Verify PR
-                                  </Button>
-                                </Form>
-                              )}
-                            </Formik>
-                          </DialogDescription>
-                        </DialogHeader>
-                      </DialogContent>
-                    </Dialog>
                     <TableRow className="py-6 custom-row-height" key={index}>
                       <TableCell className="font-medium pl-8  ">
                         {index + 1}
@@ -482,7 +481,7 @@ const Home = () => {
                       <TableCell className="max-w-[200px] whitespace-normal overflow-hidden text-ellipsis">
                         {item.title}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="">
                         {item.state === "open" ? (
                           <Badge className="bg-green-600">Open</Badge>
                         ) : (
@@ -497,7 +496,10 @@ const Home = () => {
                           disabled={item.state === "closed"}
                           className="px-4 border border-slate-500"
                           variant={"outline"}
-                          onClick={() => setVerifyDialog(true)}
+                          onClick={() => {
+                            setVerifyDialog(true);
+                            setIndex(index);
+                          }}
                         >
                           Verify PR
                         </Button>

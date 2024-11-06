@@ -1,5 +1,5 @@
 import {EIP1193Provider} from "@particle-network/auth-core";
-import {useConnect, useEthereum} from "@particle-network/authkit";
+import {useAuthCore, useConnect, useEthereum} from "@particle-network/authkit";
 import {createContext, ReactNode, useEffect, useState} from "react";
 import {
   createPublicClient,
@@ -22,6 +22,17 @@ export const GlobalContext = createContext({
   transmitDataRequest: (_issueId: number, _inputValue: string) => {},
   getLatestAnswerForIssue: (_issueId: number) => {},
   getAllIssues: () => {},
+  executeVerifyPRFunction: (_issueId: number, _inputValue: string) =>
+    Promise.resolve(),
+  shouldGiveBountyState: {
+    verifyPROwnerLoading: false,
+    verifyPROwnerError: null as string | null,
+    verifyPROwnerSuccess: null as string | null,
+
+    prAndIssueMatchingLoading: false,
+    prAndIssueMatchingError: null as string | null,
+    prAndIssueMatchingSuccess: null as string | null,
+  },
 });
 
 export default function GlobalContextProvider({
@@ -31,11 +42,29 @@ export default function GlobalContextProvider({
 }) {
   const {connectionStatus} = useConnect();
   const {provider, address, switchChain} = useEthereum();
-
+  const {userInfo} = useAuthCore();
   const [walletClient, setWalletClient] = useState<WalletClient | null>(null);
   const [publicClient, setPublicClient] = useState<PublicClient | null>(null);
 
   const [loggedInAddress, setLoggedInAddress] = useState<string>();
+
+  const [shouldGiveBountyState, setShouldGiveBountyState] = useState<{
+    verifyPROwnerLoading: boolean;
+    verifyPROwnerError: string | null;
+    verifyPROwnerSuccess: string | null;
+
+    prAndIssueMatchingLoading: boolean;
+    prAndIssueMatchingError: string | null;
+    prAndIssueMatchingSuccess: string | null;
+  }>({
+    verifyPROwnerLoading: false,
+    verifyPROwnerError: null,
+    verifyPROwnerSuccess: null,
+
+    prAndIssueMatchingLoading: false,
+    prAndIssueMatchingError: null,
+    prAndIssueMatchingSuccess: null,
+  });
 
   useEffect(() => {
     if (connectionStatus === "connected" && provider && address) {
@@ -72,9 +101,8 @@ export default function GlobalContextProvider({
 
   const createIssue = async (issueUrl: string, bountyAmount: string) => {
     try {
-
       const bountyAmountInWei = parseUnits(bountyAmount, 18);
-      
+
       if (publicClient && walletClient) {
         const tx = await walletClient.writeContract({
           address: CONTRACT_ADDRESS,
@@ -132,9 +160,26 @@ export default function GlobalContextProvider({
     }
   };
 
+  function parseGitHubPRUrl(url: string | URL) {
+    // Remove the base GitHub URL part
+    const pathParts = new URL(url).pathname.split("/");
+
+    const owner = pathParts[1]; // "mui"
+    const repo = pathParts[2]; // "material-ui"
+    const prNumber = pathParts[4]; // "44130"
+
+    return {owner, repo, prNumber};
+  }
+
   const transmitDataRequest = async (issueId: number, inputValue: string) => {
     // inputValue = prUrl#issueUrl"
+
     try {
+      setShouldGiveBountyState({
+        ...shouldGiveBountyState,
+        prAndIssueMatchingLoading: true,
+      });
+
       if (publicClient && walletClient) {
         const tx = await walletClient.writeContract({
           address: CONTRACT_ADDRESS,
@@ -146,10 +191,123 @@ export default function GlobalContextProvider({
         });
 
         await publicClient.waitForTransactionReceipt({hash: tx});
+
+        setShouldGiveBountyState({
+          ...shouldGiveBountyState,
+          prAndIssueMatchingLoading: false,
+          prAndIssueMatchingSuccess: "Data request transmitted successfully",
+        });
         console.log("Data request transmitted successfully");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error transmitting data request:", error);
+      setShouldGiveBountyState({
+        ...shouldGiveBountyState,
+        prAndIssueMatchingLoading: false,
+        prAndIssueMatchingError: "Error transmitting data request",
+      });
+    }
+  };
+
+  const executeVerifyPRFunction = async (
+    issueId: number,
+    inputValue: string
+  ) => {
+    try {
+      setShouldGiveBountyState({
+        ...shouldGiveBountyState,
+        verifyPROwnerLoading: true,
+      });
+      const {prNumber, owner, repo} = parseGitHubPRUrl(
+        inputValue.split("#")[0]
+      );
+
+      console.log(prNumber, owner, repo, "prNumber, owner, repo");
+
+      const {data} = await axios.get(
+        `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}`,
+        {
+          headers: {
+            Accept: "application/vnd.github+json",
+            Authorization: `Bearer ${import.meta.env.VITE_GITHUB_TOKEN}`,
+            "X-GitHub-Api-Version": "2022-11-28",
+          },
+        }
+      );
+
+      if (data) {
+        console.log(
+          data.user.login,
+          userInfo?.github_email?.split("@")[0],
+          "userInfo?.github_id"
+        );
+        if (data.user.login === userInfo?.github_email?.split("@")[0]) {
+          console.log("PR owner matches logged in user");
+          setShouldGiveBountyState({
+            ...shouldGiveBountyState,
+            verifyPROwnerLoading: false,
+            verifyPROwnerSuccess: "PR owner matches logged in user",
+          });
+
+          try {
+            setShouldGiveBountyState({
+              ...shouldGiveBountyState,
+              prAndIssueMatchingLoading: true,
+            });
+
+            if (publicClient && walletClient) {
+              const tx = await walletClient.writeContract({
+                address: CONTRACT_ADDRESS,
+                abi: CONTRACT_ABI,
+                functionName: "transmit",
+                account: loggedInAddress as `0x${string}`,
+                args: [issueId, inputValue],
+                chain: baseSepolia,
+              });
+
+              await publicClient.waitForTransactionReceipt({hash: tx});
+
+              setShouldGiveBountyState({
+                ...shouldGiveBountyState,
+                prAndIssueMatchingLoading: false,
+                prAndIssueMatchingSuccess:
+                  "Data request transmitted successfully",
+              });
+              console.log("Data request transmitted successfully");
+            }
+          } catch (error: any) {
+            console.error("Error transmitting data request:", error);
+            setShouldGiveBountyState({
+              ...shouldGiveBountyState,
+              prAndIssueMatchingLoading: false,
+              prAndIssueMatchingError: "Error transmitting data request",
+            });
+          }
+        } else {
+          setShouldGiveBountyState({
+            ...shouldGiveBountyState,
+            verifyPROwnerLoading: false,
+            verifyPROwnerError: "PR owner does not match logged in user",
+          });
+
+          console.log("PR owner does not match logged in user");
+
+          throw new Error("PR owner does not match logged in user");
+        }
+      }
+
+      setShouldGiveBountyState({
+        ...shouldGiveBountyState,
+        verifyPROwnerLoading: false,
+      });
+    } catch (error: any) {
+      console.error("Error verifying PR owner:", error);
+
+      setShouldGiveBountyState({
+        ...shouldGiveBountyState,
+        verifyPROwnerLoading: false,
+        verifyPROwnerError: "Error verifying PR owner",
+      });
     }
   };
 
@@ -171,34 +329,34 @@ export default function GlobalContextProvider({
     }
   };
 
-  async function fetchIssues(
-    owner = "shadcn-ui",
-    repo = "next-template",
-    issueNumber: number
-  ) {
-    try {
-      const {data} = await axios.get(
-        `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}`,
-        {
-          headers: {
-            Accept: "application/vnd.github+json",
-            Authorization: `Bearer ${import.meta.env.VITE_GITHUB_TOKEN}`,
-            "X-GitHub-Api-Version": "2022-11-28",
-          },
-        }
-      );
+  // async function fetchIssues(
+  //   owner = "shadcn-ui",
+  //   repo = "next-template",
+  //   issueNumber: number
+  // ) {
+  //   try {
+  //     const {data} = await axios.get(
+  //       `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}`,
+  //       {
+  //         headers: {
+  //           Accept: "application/vnd.github+json",
+  //           Authorization: `Bearer ${import.meta.env.VITE_GITHUB_TOKEN}`,
+  //           "X-GitHub-Api-Version": "2022-11-28",
+  //         },
+  //       }
+  //     );
 
-      if (data) {
-        const data1 = data.filter(
-          (issues: any) => !issues.hasOwnProperty("pull_request")
-        );
+  //     if (data) {
+  //       const data1 = data.filter(
+  //         (issues: any) => !issues.hasOwnProperty("pull_request")
+  //       );
 
-        console.log(data1, "data1");
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  }
+  //       console.log(data1, "data1");
+  //     }
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // }
 
   return (
     <GlobalContext.Provider
@@ -210,6 +368,8 @@ export default function GlobalContextProvider({
         transmitDataRequest,
         getLatestAnswerForIssue,
         getAllIssues,
+        executeVerifyPRFunction,
+        shouldGiveBountyState,
       }}
     >
       {children}
