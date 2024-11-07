@@ -122,7 +122,7 @@ const [githubUsername, setGithubUsername] = useState<string>("");
       }
     }
     fetch();
-  }, [])
+  }, [userInfo])
 
   useEffect(() => {
     if (!connected) {
