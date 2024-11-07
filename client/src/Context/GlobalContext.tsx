@@ -22,7 +22,7 @@ export const GlobalContext = createContext({
   transmitDataRequest: (_issueId: number, _inputValue: string) => {},
   getLatestAnswerForIssue: (_issueId: number) => {},
   getAllIssues: () => {},
-  executeVerifyPRFunction: (_issueId: number, _inputValue: string, _githubUserName: string) =>
+  executeVerifyPRFunction: (_issueId: number, _inputValue: string) =>
     Promise.resolve(),
   shouldGiveBountyState: {
     verifyPROwnerLoading: false,
@@ -33,6 +33,11 @@ export const GlobalContext = createContext({
     prAndIssueMatchingError: null as string | null,
     prAndIssueMatchingSuccess: null as string | null,
   },
+
+  setShouldGiveBountyState: (_shouldGiveBountyState: any) => {},
+  step: 0,
+  setStep: (_step: number) => {},
+  createIssueLoading: false,
 });
 
 export default function GlobalContextProvider({
@@ -66,6 +71,10 @@ export default function GlobalContextProvider({
     prAndIssueMatchingSuccess: null,
   });
 
+  const [step, setStep] = useState(0);
+
+  console.log(step, "step");
+
   useEffect(() => {
     if (connectionStatus === "connected" && provider && address) {
       (async function () {
@@ -92,9 +101,6 @@ export default function GlobalContextProvider({
     }
   }, [provider, connectionStatus]);
 
-
-  
-
   useEffect(() => {
     if (address) {
       console.log("Address:", address);
@@ -102,8 +108,10 @@ export default function GlobalContextProvider({
     }
   }, [address]);
 
+  const [createIssueLoading, setCreateIssueLoading] = useState(false);
   const createIssue = async (issueUrl: string, bountyAmount: string) => {
     try {
+      setCreateIssueLoading(true);
       const bountyAmountInWei = parseUnits(bountyAmount, 18);
 
       if (publicClient && walletClient) {
@@ -123,6 +131,8 @@ export default function GlobalContextProvider({
     } catch (error) {
       console.error("Error creating issue:", error);
       return [];
+    } finally {
+      setCreateIssueLoading(false);
     }
   };
 
@@ -214,19 +224,18 @@ export default function GlobalContextProvider({
 
   const executeVerifyPRFunction = async (
     issueId: number,
-    inputValue: string,
-    githubUserName: string
+    inputValue: string
   ) => {
     try {
-      setShouldGiveBountyState({
-        ...shouldGiveBountyState,
+      // Step 1
+      setShouldGiveBountyState((prevState) => ({
+        ...prevState,
         verifyPROwnerLoading: true,
-      });
+      }));
+
       const {prNumber, owner, repo} = parseGitHubPRUrl(
         inputValue.split("#")[0]
       );
-
-      console.log(prNumber, owner, repo, "prNumber, owner, repo");
 
       const {data} = await axios.get(
         `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}`,
@@ -239,79 +248,98 @@ export default function GlobalContextProvider({
         }
       );
 
-      if (data) {
-        console.log(
-          data.user.login,
-          userInfo?.github_email?.split("@")[0],
-          "userInfo?.github_id"
-        );
-        if (data.user.login === userInfo?.github_email?.split("@")[0]) {
+      const {data: data1} = await axios.get(
+        `https://api.github.com/user/${userInfo?.github_id}`,
+        {
+          headers: {
+            Accept: "application/vnd.github+json",
+            Authorization: `Bearer ${import.meta.env.VITE_GITHUB_TOKEN}`,
+            "X-GitHub-Api-Version": "2022-11-28",
+          },
+        }
+      );
+
+      if (data && data1) {
+        if (data.user.login === data1.login) {
           console.log("PR owner matches logged in user");
-          setShouldGiveBountyState({
-            ...shouldGiveBountyState,
+
+          // Update Step 1 success message
+          setShouldGiveBountyState((prevState) => ({
+            ...prevState,
             verifyPROwnerLoading: false,
             verifyPROwnerSuccess: "PR owner matches logged in user",
-          });
+          }));
 
-          try {
-            setShouldGiveBountyState({
-              ...shouldGiveBountyState,
-              prAndIssueMatchingLoading: true,
-            });
+          // Step 2 with delay
+          setTimeout(async () => {
+            try {
+              setShouldGiveBountyState((prevState) => ({
+                ...prevState,
+                prAndIssueMatchingLoading: true,
+              }));
 
-            if (publicClient && walletClient) {
-              const tx = await walletClient.writeContract({
-                address: CONTRACT_ADDRESS,
-                abi: CONTRACT_ABI,
-                functionName: "transmit",
-                account: loggedInAddress as `0x${string}`,
-                args: [issueId, inputValue],
-                chain: baseSepolia,
-              });
+              console.log(
+                Number(issueId),
+                inputValue,
+                "issueId, inputValue before passing to transmit"
+              );
 
-              await publicClient.waitForTransactionReceipt({hash: tx});
+              if (publicClient && walletClient) {
+                const tx = await walletClient.writeContract({
+                  address: CONTRACT_ADDRESS,
+                  abi: CONTRACT_ABI,
+                  functionName: "transmit",
+                  account: loggedInAddress as `0x${string}`,
+                  args: [Number(issueId), inputValue],
+                  chain: baseSepolia,
+                });
 
-              setShouldGiveBountyState({
-                ...shouldGiveBountyState,
+                await publicClient.waitForTransactionReceipt({hash: tx});
+
+                setShouldGiveBountyState((prevState) => ({
+                  ...prevState,
+                  prAndIssueMatchingLoading: false,
+                  prAndIssueMatchingSuccess:
+                    "Data request transmitted successfully",
+                }));
+                console.log("Data request transmitted successfully");
+
+                setTimeout(() => {
+                  setStep(2);
+                }, 1500);
+              }
+            } catch (error: any) {
+              console.error("Error transmitting data request:", error);
+              setShouldGiveBountyState((prevState) => ({
+                ...prevState,
                 prAndIssueMatchingLoading: false,
-                prAndIssueMatchingSuccess:
-                  "Data request transmitted successfully",
-              });
-              console.log("Data request transmitted successfully");
+                prAndIssueMatchingError: "Error PR is not matching",
+              }));
             }
-          } catch (error: any) {
-            console.error("Error transmitting data request:", error);
-            setShouldGiveBountyState({
-              ...shouldGiveBountyState,
-              prAndIssueMatchingLoading: false,
-              prAndIssueMatchingError: "Error transmitting data request",
-            });
-          }
+          }, 2000); // Delay of 2 seconds
         } else {
-          setShouldGiveBountyState({
-            ...shouldGiveBountyState,
+          setShouldGiveBountyState((prevState) => ({
+            ...prevState,
             verifyPROwnerLoading: false,
             verifyPROwnerError: "PR owner does not match logged in user",
-          });
-
-          console.log("PR owner does not match logged in user");
+          }));
 
           throw new Error("PR owner does not match logged in user");
         }
+      } else {
+        setShouldGiveBountyState((prevState) => ({
+          ...prevState,
+          verifyPROwnerLoading: false,
+          verifyPROwnerError: "Error verifying PR owner",
+        }));
       }
-
-      setShouldGiveBountyState({
-        ...shouldGiveBountyState,
-        verifyPROwnerLoading: false,
-      });
     } catch (error: any) {
       console.error("Error verifying PR owner:", error);
-
-      setShouldGiveBountyState({
-        ...shouldGiveBountyState,
+      setShouldGiveBountyState((prevState) => ({
+        ...prevState,
         verifyPROwnerLoading: false,
         verifyPROwnerError: "Error verifying PR owner",
-      });
+      }));
     }
   };
 
@@ -374,6 +402,10 @@ export default function GlobalContextProvider({
         getAllIssues,
         executeVerifyPRFunction,
         shouldGiveBountyState,
+        setShouldGiveBountyState,
+        step,
+        setStep,
+        createIssueLoading,
       }}
     >
       {children}

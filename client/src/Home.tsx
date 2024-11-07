@@ -17,7 +17,7 @@ import Navbar from "./components/Navbar";
 import axios from "axios";
 import {ReloadIcon} from "@radix-ui/react-icons";
 import {Field, Form, Formik} from "formik";
-import {CircleCheck, CircleX} from "lucide-react";
+import {CircleCheck, CircleX, Loader2} from "lucide-react";
 import {useNavigate} from "react-router-dom";
 
 import {
@@ -86,8 +86,17 @@ import {Label} from "./components/ui/label";
 // ];
 
 const Home = () => {
-  const {getAllIssues, shouldGiveBountyState, executeVerifyPRFunction} =
-    useGlobalContext();
+  const {
+    getAllIssues,
+    shouldGiveBountyState,
+    executeVerifyPRFunction,
+    setShouldGiveBountyState,
+    step,
+    setStep,
+    getLatestAnswerForIssue,
+    createIssue,
+    createIssueLoading,
+  } = useGlobalContext();
 
   const {connected} = useConnect();
   const {userInfo} = useAuthCore();
@@ -95,16 +104,13 @@ const Home = () => {
   // const [selectedIssue, setSelectedIssue] = useState<any>(null);
   // const [incentiveAmount, setIncentiveAmount] = useState("");
 
-
-const [githubUsername, setGithubUsername] = useState<string>("");
+  const [githubUsername, setGithubUsername] = useState<string>("");
 
   useEffect(() => {
-
-    const fetch = async()=>{
-
+    const fetch = async () => {
       if (userInfo) {
         // setGithubUsername(userInfo.github_id);
-        
+
         // https://api.github.com/user/84982038
         const {data} = await axios.get(
           `https://api.github.com/user/${userInfo.github_id}`,
@@ -120,9 +126,9 @@ const [githubUsername, setGithubUsername] = useState<string>("");
         console.log(data, "data---github");
         setGithubUsername(data.login);
       }
-    }
+    };
     fetch();
-  }, [userInfo])
+  }, [userInfo]);
 
   useEffect(() => {
     if (!connected) {
@@ -301,18 +307,35 @@ const [githubUsername, setGithubUsername] = useState<string>("");
   // }
 
   const [verifyDialog, setVerifyDialog] = useState(false);
-  const [, setBountyModal] = useState(false);
+  const [bountyModal, setBountyModal] = useState(false);
   const [index, setIndex] = useState(0);
-  const [openShouldGiveBountyModal, setOpenShouldGiveBountyModal] =
-    useState(false);
 
-  const [step, setStep] = useState(0);
+  useEffect(() => {
+    if (verifyDialog === false) {
+      // setStep(0);
+      setShouldGiveBountyState({
+        verifyPROwnerLoading: false,
+        verifyPROwnerSuccess: false,
+        verifyPROwnerError: null,
+        prAndIssueMatchingLoading: false,
+        prAndIssueMatchingSuccess: false,
+        prAndIssueMatchingError: null,
+      });
+    }
+  }, [verifyDialog]);
+
+  console.log(shouldGiveBountyState, "shouldGiveBountyState");
 
   return (
     <div className="h-screen w-full">
       <Navbar />
       <Dialog open={verifyDialog} onOpenChange={setVerifyDialog}>
-        <DialogContent>
+        <DialogContent
+          onEscapeKeyDown={(e) => e.preventDefault()}
+          onInteractOutside={(e) => {
+            e.preventDefault();
+          }}
+        >
           <DialogHeader>
             <DialogTitle>Verify PR</DialogTitle>
             <DialogDescription>
@@ -328,7 +351,8 @@ const [githubUsername, setGithubUsername] = useState<string>("");
                     // transmitDataRequest(githubIssues[index].id, inputValue);
 
                     setStep(1);
-                    executeVerifyPRFunction(githubIssues[index].id, inputValue, githubUsername);
+
+                    executeVerifyPRFunction(githubIssues[index].id, inputValue);
                   }}
                 >
                   {(formik) => (
@@ -354,7 +378,7 @@ const [githubUsername, setGithubUsername] = useState<string>("");
                     </Form>
                   )}
                 </Formik>
-              ) : (
+              ) : step === 1 ? (
                 <div className="w-full h-full flex flex-col mt-5 font-sans text-black text-left">
                   <div className="w-full h-[80px] flex items-center px-4">
                     <div className="flex flex-col w-full">
@@ -409,7 +433,87 @@ const [githubUsername, setGithubUsername] = useState<string>("");
                     )}
                   </div>
                 </div>
+              ) : (
+                step === 2 && (
+                  <div className="py-10">
+                    <div className="w-full">
+                      <Button
+                        className="w-full"
+                        onClick={() =>
+                          getLatestAnswerForIssue(githubIssues[index].id)
+                        }
+                      >
+                        Claim Bounty
+                      </Button>
+                    </div>
+                  </div>
+                )
               )}
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={bountyModal} onOpenChange={setBountyModal}>
+        <DialogContent
+          onEscapeKeyDown={(e) => e.preventDefault()}
+          onInteractOutside={(e) => {
+            e.preventDefault();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>Drop Bounty on Issue</DialogTitle>
+            <DialogDescription>
+              <Formik
+                initialValues={{issueUrl: "", bountyAmount: 0}}
+                onSubmit={(values, _) => {
+                  createIssue(values.issueUrl, values.bountyAmount.toString());
+                }}
+              >
+                {(formik) => (
+                  <Form className="flex flex-col gap-4 pt-4">
+                    <div className="flex flex-col w-full gap-4">
+                      <Label htmlFor="issueUrl">Issue Link</Label>
+                      <Field
+                        as={Input}
+                        name="issueUrl"
+                        id="issueUrl"
+                        placeholder="Enter your Issue Link"
+                        className={`bg-white max-w-2xl focus-visible:ring-0 ${
+                          formik.errors.issueUrl && formik.touched.issueUrl
+                            ? "border-red-500"
+                            : "border-gray-300"
+                        }`}
+                      />
+                    </div>
+                    <div className="flex flex-col w-full gap-4">
+                      <Label htmlFor="issueUrl">Bounty Amount</Label>
+                      <Field
+                        as={Input}
+                        name="bountyAmount"
+                        id="bountyAmount"
+                        placeholder="Enter Bounty Amount"
+                        className={`bg-white max-w-2xl focus-visible:ring-0 ${
+                          formik.errors.bountyAmount &&
+                          formik.touched.bountyAmount
+                            ? "border-red-500"
+                            : "border-gray-300"
+                        }`}
+                      />
+                    </div>
+                    {createIssueLoading ? (
+                      <Button disabled>
+                        <Loader2 className="w-full animate-spin" />
+                        Please wait
+                      </Button>
+                    ) : (
+                      <Button type="submit" size="lg" className="w-full">
+                        Submit
+                      </Button>
+                    )}
+                  </Form>
+                )}
+              </Formik>
             </DialogDescription>
           </DialogHeader>
         </DialogContent>

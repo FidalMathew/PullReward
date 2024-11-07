@@ -1,11 +1,9 @@
-import {useAuthCore, useConnect, useEthereum} from "@particle-network/authkit";
+import {useAuthCore, useConnect} from "@particle-network/authkit";
 import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {useNavigate} from "react-router-dom";
