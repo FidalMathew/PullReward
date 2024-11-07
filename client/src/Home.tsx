@@ -95,6 +95,35 @@ const Home = () => {
   // const [selectedIssue, setSelectedIssue] = useState<any>(null);
   // const [incentiveAmount, setIncentiveAmount] = useState("");
 
+
+const [githubUsername, setGithubUsername] = useState<string>("");
+
+  useEffect(() => {
+
+    const fetch = async()=>{
+
+      if (userInfo) {
+        // setGithubUsername(userInfo.github_id);
+        
+        // https://api.github.com/user/84982038
+        const {data} = await axios.get(
+          `https://api.github.com/user/${userInfo.github_id}`,
+          {
+            headers: {
+              Accept: "application/vnd.github+json",
+              Authorization: `Bearer ${import.meta.env.VITE_GITHUB_TOKEN}`,
+              "X-GitHub-Api-Version": "2022-11-28",
+            },
+          }
+        );
+
+        console.log(data, "data---github");
+        setGithubUsername(data.login);
+      }
+    }
+    fetch();
+  }, [])
+
   useEffect(() => {
     if (!connected) {
       navigate("/connect");
@@ -299,7 +328,7 @@ const Home = () => {
                     // transmitDataRequest(githubIssues[index].id, inputValue);
 
                     setStep(1);
-                    executeVerifyPRFunction(githubIssues[index].id, inputValue);
+                    executeVerifyPRFunction(githubIssues[index].id, inputValue, githubUsername);
                   }}
                 >
                   {(formik) => (

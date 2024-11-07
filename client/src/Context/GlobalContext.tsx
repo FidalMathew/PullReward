@@ -22,7 +22,7 @@ export const GlobalContext = createContext({
   transmitDataRequest: (_issueId: number, _inputValue: string) => {},
   getLatestAnswerForIssue: (_issueId: number) => {},
   getAllIssues: () => {},
-  executeVerifyPRFunction: (_issueId: number, _inputValue: string) =>
+  executeVerifyPRFunction: (_issueId: number, _inputValue: string, _githubUserName: string) =>
     Promise.resolve(),
   shouldGiveBountyState: {
     verifyPROwnerLoading: false,
@@ -91,6 +91,9 @@ export default function GlobalContextProvider({
       })();
     }
   }, [provider, connectionStatus]);
+
+
+  
 
   useEffect(() => {
     if (address) {
@@ -211,7 +214,8 @@ export default function GlobalContextProvider({
 
   const executeVerifyPRFunction = async (
     issueId: number,
-    inputValue: string
+    inputValue: string,
+    githubUserName: string
   ) => {
     try {
       setShouldGiveBountyState({
