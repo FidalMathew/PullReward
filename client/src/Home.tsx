@@ -19,7 +19,7 @@ import {ReloadIcon} from "@radix-ui/react-icons";
 import {Field, Form, Formik} from "formik";
 import {CircleCheck, CircleX, Loader2} from "lucide-react";
 import {useNavigate} from "react-router-dom";
-
+import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -298,6 +298,7 @@ const Home = () => {
     }
   }, [verifyDialog]);
 
+  console.log(githubIssues, "fucku");
   console.log(shouldGiveBountyState, "shouldGiveBountyState");
 
   return (
@@ -513,144 +514,188 @@ const Home = () => {
       </Dialog>
 
       <div
-        className="w-full flex flex-col p-4 gap-5 justify-end"
+        className="w-full flex flex-col p-4 gap-5"
         style={{height: "calc(100vh - 90px)"}}
       >
-        {/* <Formik
-          initialValues={{repoLink: ""}}
-          onSubmit={async (values, _) => {
-            const arr = values.repoLink.split("/");
-            const repo = arr[arr.length - 1];
-            await fetchIssues(arr[arr.length - 2], repo);
-          }}
-          validationSchema={Yup.object().shape({
-            repoLink: Yup.string()
-              .url("Please enter a valid URL")
-              .matches(
-                /^https:\/\/(www\.)?github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+/,
-                "Please enter a valid GitHub repository URL"
-              )
-              .required("Repository link is required"),
-          })}
-        >
-          {(formik) => (
-            <Form className="max-w-xl flex items-start gap-2">
-              <div className="flex flex-col w-full justify-start">
-                <Field
-                  as={Input}
-                  name="repoLink"
-                  id="repoLink"
-                  placeholder="Enter your Repo Link"
-                  className={`bg-white max-w-2xl focus-visible:ring-0 ${
-                    formik.errors.repoLink && formik.touched.repoLink
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  }`}
-                />
+        <Tabs defaultValue="openissues" className="">
+          <div className="flex justify-between mb-5">
+            <TabsList>
+              <TabsTrigger value="openissues">Open Issues</TabsTrigger>
+              <TabsTrigger value="allissues">All Issues</TabsTrigger>
+            </TabsList>
 
-
-                <ErrorMessage name="repoLink">
-                  {(msg) => (
-                    <div className="text-red-500 text-xs mt-1">{msg}</div>
-                  )}
-                </ErrorMessage>
-              </div>
-
-              <Button size="icon" className="px-4" type="submit">
-                <Search className="h-4 w-4 shadow-none" />
-              </Button>
-
-              {githubIssues && githubIssues.length > 0 && (
-                <div className="">
-                  <p className="mt-[8px] text-sm w-[150px]">
-                    {githubIssues.length} Issues Found
-                  </p>
+            <Button
+              className="w-fit"
+              variant={"outline"}
+              onClick={() => setBountyModal((prev) => !prev)}
+            >
+              Create Bounty for Issues
+            </Button>
+          </div>
+          <TabsContent value="openissues">
+            <div className="h-full w-full bg-white rounded-lg border border-slate-800 overflow-y-scroll">
+              {githubIssues && loading && (
+                <div className="p-7 flex justify-center items-center h-full w-full">
+                  <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
                 </div>
               )}
-            </Form>
-          )}
-            
-        </Formik> */}
 
-        <Button
-          className="w-fit"
-          variant={"outline"}
-          onClick={() => setBountyModal((prev) => !prev)}
-        >
-          Create Bounty for Issues
-        </Button>
-
-        <div className="h-full w-full bg-white rounded-lg border border-slate-800 overflow-y-scroll">
-          {githubIssues && loading && (
-            <div className="p-7 flex justify-center items-center h-full w-full">
-              <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
-            </div>
-          )}
-          {githubIssues && !loading && githubIssues.length > 0 && (
-            <Table>
-              <TableHeader>
-                <TableRow className="custom-header-height">
-                  <TableHead className="w-[100px] pl-8  ">ID</TableHead>
-                  <TableHead>Issue</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-center">Incentive</TableHead>
-                  <TableHead className="text-right pr-8">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody className="min-h-[300px]">
-                {githubIssues.map((item: any, index: number) => (
-                  <>
-                    <TableRow className="py-6 custom-row-height" key={index}>
-                      <TableCell className="font-medium pl-8  ">
-                        {index + 1}
-                      </TableCell>
-                      <TableCell className="max-w-[200px] whitespace-normal overflow-hidden text-ellipsis">
-                        {item.title}
-                      </TableCell>
-                      <TableCell className="">
-                        {item.state === "open" ? (
-                          <Badge className="bg-green-600 hover:bg-green-600">
-                            Open
-                          </Badge>
-                        ) : (
-                          <Badge className="bg-red-600 hover:bg-red-600">
-                            Closed
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {item.incentive} ETH
-                      </TableCell>
-                      <TableCell className="text-right pr-8">
-                        <Button
-                          disabled={item.state === "closed"}
-                          className="px-4 border border-slate-500"
-                          variant={"outline"}
-                          onClick={() => {
-                            setVerifyDialog(true);
-                            setIndex(index);
-                          }}
-                        >
-                          Verify PR
-                        </Button>
-                      </TableCell>
+              {githubIssues && !loading && githubIssues.length > 0 && (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="custom-header-height">
+                      <TableHead className="w-[100px] pl-8  ">ID</TableHead>
+                      <TableHead>Issue</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-center">Incentive</TableHead>
+                      <TableHead className="text-right pr-8">Action</TableHead>
                     </TableRow>
-                  </>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+                  </TableHeader>
+                  <TableBody className="min-h-[300px]">
+                    {githubIssues
+                      .filter((item: any) => item.state === "open")
+                      .map((item: any, index: number) => (
+                        <>
+                          <TableRow
+                            className="py-6 custom-row-height"
+                            key={index}
+                          >
+                            <TableCell className="font-medium pl-8  ">
+                              {index + 1}
+                            </TableCell>
+                            <TableCell className="max-w-[200px] whitespace-normal overflow-hidden text-ellipsis">
+                              {item.title}
+                            </TableCell>
+                            <TableCell className="">
+                              {item.state === "open" ? (
+                                <Badge className="bg-green-600 hover:bg-green-600">
+                                  Open
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-red-600 hover:bg-red-600">
+                                  Closed
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {item.incentive} ETH
+                            </TableCell>
+                            <TableCell className="text-right pr-8">
+                              <Button
+                                disabled={item.state === "closed"}
+                                className="px-4 border border-slate-500"
+                                variant={"outline"}
+                                onClick={() => {
+                                  setVerifyDialog(true);
+                                  setIndex(index);
+                                }}
+                              >
+                                Verify PR
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        </>
+                      ))}
+                  </TableBody>
+                </Table>
+              )}
 
-          {/* <Button onClick={()=>}> Hello</Button> */}
+              {githubIssues &&
+                githubIssues.filter((item: any) => item.state === "open")
+                  .length === 0 && (
+                  <div className="p-7 text-center">
+                    <p>No issues found</p>
+                  </div>
+                )}
 
-          <div className="">
-            {githubIssues && githubIssues.length === 0 && !loading && (
-              <div className="p-7 text-center">
-                <p>No issues found</p>
+              {/* <Button onClick={()=>}> Hello</Button> */}
+
+              <div className="">
+                {githubIssues && githubIssues.length === 0 && !loading && (
+                  <div className="p-7 text-center">
+                    <p>No issues found</p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </div>
+            </div>
+          </TabsContent>
+          <TabsContent value="allissues">
+            <div className="h-full w-full bg-white rounded-lg border border-slate-800 overflow-y-scroll">
+              {githubIssues && loading && (
+                <div className="p-7 flex justify-center items-center h-full w-full">
+                  <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
+                </div>
+              )}
+              {githubIssues && !loading && githubIssues.length > 0 && (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="custom-header-height">
+                      <TableHead className="w-[100px] pl-8  ">ID</TableHead>
+                      <TableHead>Issue</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-center">Incentive</TableHead>
+                      <TableHead className="text-right pr-8">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="min-h-[300px]">
+                    {githubIssues.map((item: any, index: number) => (
+                      <>
+                        <TableRow
+                          className="py-6 custom-row-height"
+                          key={index}
+                        >
+                          <TableCell className="font-medium pl-8  ">
+                            {index + 1}
+                          </TableCell>
+                          <TableCell className="max-w-[200px] whitespace-normal overflow-hidden text-ellipsis">
+                            {item.title}
+                          </TableCell>
+                          <TableCell className="">
+                            {item.state === "open" ? (
+                              <Badge className="bg-green-600 hover:bg-green-600">
+                                Open
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-red-600 hover:bg-red-600">
+                                Closed
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {item.incentive} ETH
+                          </TableCell>
+                          <TableCell className="text-right pr-8">
+                            <Button
+                              disabled={item.state === "closed"}
+                              className="px-4 border border-slate-500"
+                              variant={"outline"}
+                              onClick={() => {
+                                setVerifyDialog(true);
+                                setIndex(index);
+                              }}
+                            >
+                              Verify PR
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      </>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+
+              {/* <Button onClick={()=>}> Hello</Button> */}
+
+              <div className="">
+                {githubIssues && githubIssues.length === 0 && !loading && (
+                  <div className="p-7 text-center">
+                    <p>No issues found</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
