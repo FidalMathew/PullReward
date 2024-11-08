@@ -23,7 +23,7 @@ export default function Navbar() {
   return (
     <div className="w-full h-[70px] border-b flex justify-between items-center px-6">
       <div>
-        <p>Application Name</p>
+        <b>PullRewards</b>
       </div>
 
       <div className="flex items-center gap-6">
