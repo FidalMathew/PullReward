@@ -13,6 +13,7 @@ import {baseSepolia} from "viem/chains";
 import CONTRACT_ABI from "@/lib/abi.json";
 import {CONTRACT_ADDRESS} from "@/lib/constants";
 import axios from "axios";
+import {toast} from "sonner";
 
 export const GlobalContext = createContext({
   walletClient: null as WalletClient | null,
@@ -32,12 +33,18 @@ export const GlobalContext = createContext({
     prAndIssueMatchingLoading: false,
     prAndIssueMatchingError: null as string | null,
     prAndIssueMatchingSuccess: null as string | null,
+
+    isClaimableLoading: false,
+    isClaimableError: null as string | null,
+    isClaimableSuccess: null as string | null,
   },
 
   setShouldGiveBountyState: (_shouldGiveBountyState: any) => {},
   step: 0,
   setStep: (_step: number) => {},
   createIssueLoading: false,
+
+  executeWithValidAnswer: (_issueId: number) => Promise.resolve(),
 });
 
 export default function GlobalContextProvider({
@@ -61,6 +68,10 @@ export default function GlobalContextProvider({
     prAndIssueMatchingLoading: boolean;
     prAndIssueMatchingError: string | null;
     prAndIssueMatchingSuccess: string | null;
+
+    isClaimableLoading: boolean;
+    isClaimableError: string | null;
+    isClaimableSuccess: string | null;
   }>({
     verifyPROwnerLoading: false,
     verifyPROwnerError: null,
@@ -69,6 +80,10 @@ export default function GlobalContextProvider({
     prAndIssueMatchingLoading: false,
     prAndIssueMatchingError: null,
     prAndIssueMatchingSuccess: null,
+
+    isClaimableLoading: false,
+    isClaimableError: null,
+    isClaimableSuccess: null,
   });
 
   const [step, setStep] = useState(0);
@@ -222,6 +237,79 @@ export default function GlobalContextProvider({
     }
   };
 
+  async function pollForValidAnswer(issueId: number): Promise<bigint> {
+    const delay = (ms: number) =>
+      new Promise((resolve) => setTimeout(resolve, ms));
+    const pollingInterval = 10000; // 3 seconds
+
+    while (true) {
+      try {
+        if (publicClient && walletClient && loggedInAddress) {
+          const data: unknown = await publicClient.readContract({
+            address: CONTRACT_ADDRESS,
+            abi: CONTRACT_ABI,
+            functionName: "latestAnswerIssueId",
+            args: [issueId],
+          });
+
+          if (typeof data === "bigint") {
+            return data;
+          }
+        }
+      } catch (error) {
+        console.log("Polling error, retrying in 3 seconds:", error);
+      }
+
+      await delay(pollingInterval);
+    }
+  }
+
+  const getLatestAnswerForIssue = async (issueId: number): Promise<any> => {
+    try {
+      toast.loading("Fetching latest answer for issue ID");
+
+      if (publicClient && walletClient && loggedInAddress) {
+        const tx = await walletClient.writeContract({
+          address: CONTRACT_ADDRESS,
+          abi: CONTRACT_ABI,
+          functionName: "latestAnswerIssueId",
+          args: [issueId],
+          chain: baseSepolia,
+          account: loggedInAddress as `0x${string}`,
+        });
+
+        await publicClient.waitForTransactionReceipt({hash: tx});
+
+        // console.log(data, `Latest answer for issue ID ${issueId}`);
+        toast.success("Latest answer fetched successfully");
+        // return data;
+      }
+    } catch (error) {
+      console.error("Error fetching the latest answer:", error);
+      toast.error("Error fetching the latest answer");
+    } finally {
+      toast.dismiss();
+    }
+  };
+
+  // Usage
+  async function executeWithValidAnswer(issueId: number) {
+    try {
+      toast.loading("Waiting for valid answer");
+      const validAnswer = await pollForValidAnswer(issueId);
+
+      if (validAnswer) {
+        await getLatestAnswerForIssue(issueId);
+        toast.success("Valid answer received");
+      }
+    } catch (error) {
+      console.error("Error during execution:", error);
+      toast.error("Error during execution");
+    } finally {
+      toast.dismiss();
+    }
+  }
+
   const executeVerifyPRFunction = async (
     issueId: number,
     inputValue: string
@@ -296,6 +384,40 @@ export default function GlobalContextProvider({
 
                 await publicClient.waitForTransactionReceipt({hash: tx});
 
+                // Step 3:
+                try {
+                  setTimeout(async () => {
+                    setStep(2);
+
+                    setShouldGiveBountyState((prevState) => ({
+                      ...prevState,
+                      isClaimableLoading: true,
+                    }));
+                    const result = await pollForValidAnswer(issueId);
+                    console.log(result, "result");
+                    if (Number(result) === 5) {
+                      setShouldGiveBountyState((prevState) => ({
+                        ...prevState,
+                        isClaimableLoading: false,
+                        isClaimableSuccess: "Bounty is claimable",
+                      }));
+                    } else {
+                      setShouldGiveBountyState((prevState) => ({
+                        ...prevState,
+                        isClaimableLoading: false,
+                        isClaimableError: "Bounty is not claimable",
+                      }));
+                    }
+                  }, 2000);
+                } catch (error: any) {
+                  console.error("Error during execution:", error);
+                  setShouldGiveBountyState((prevState) => ({
+                    ...prevState,
+                    isClaimableLoading: false,
+                    isClaimableError: error.message,
+                  }));
+                }
+
                 setShouldGiveBountyState((prevState) => ({
                   ...prevState,
                   prAndIssueMatchingLoading: false,
@@ -303,17 +425,13 @@ export default function GlobalContextProvider({
                     "Data request transmitted successfully",
                 }));
                 console.log("Data request transmitted successfully");
-
-                setTimeout(() => {
-                  setStep(2);
-                }, 1500);
               }
             } catch (error: any) {
               console.error("Error transmitting data request:", error);
               setShouldGiveBountyState((prevState) => ({
                 ...prevState,
                 prAndIssueMatchingLoading: false,
-                prAndIssueMatchingError: "Error PR is not matching",
+                prAndIssueMatchingError: error.message,
               }));
             }
           }, 2000); // Delay of 2 seconds
@@ -338,28 +456,36 @@ export default function GlobalContextProvider({
       setShouldGiveBountyState((prevState) => ({
         ...prevState,
         verifyPROwnerLoading: false,
-        verifyPROwnerError: "Error verifying PR owner",
+        verifyPROwnerError: error.message,
       }));
     }
   };
 
-  const getLatestAnswerForIssue = async (issueId: number) => {
-    try {
-      if (publicClient) {
-        const data = await publicClient.readContract({
-          address: CONTRACT_ADDRESS,
-          abi: CONTRACT_ABI,
-          functionName: "latestAnswerIssueId",
-          args: [issueId],
-        });
+  // const getLatestAnswerForIssue = async (issueId: number) => {
+  //   try {
+  //     toast.loading("Fetching latest answer for issue ID");
 
-        console.log(data, `Latest answer for issue ID ${issueId}`);
-        return data as any; // Type appropriately based on expected result structure
-      }
-    } catch (error) {
-      console.error("Error fetching the latest answer:", error);
-    }
-  };
+  //     if (publicClient && walletClient && loggedInAddress) {
+  //       const data = await walletClient.writeContract({
+  //         address: CONTRACT_ADDRESS,
+  //         abi: CONTRACT_ABI,
+  //         functionName: "latestAnswerIssueId",
+  //         args: [issueId],
+  //         chain: baseSepolia,
+  //         account: loggedInAddress as `0x${string}`,
+  //       });
+
+  //       console.log(data, `Latest answer for issue ID ${issueId}`);
+  //       toast.success("Latest answer fetched successfully");
+  //       return data as any; // Type appropriately based on expected result structure
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching the latest answer:", error);
+  //     toast.error("Error fetching the latest answer");
+  //   } finally {
+  //     toast.dismiss();
+  //   }
+  // };
 
   // async function fetchIssues(
   //   owner = "shadcn-ui",
@@ -406,6 +532,7 @@ export default function GlobalContextProvider({
         step,
         setStep,
         createIssueLoading,
+        executeWithValidAnswer,
       }}
     >
       {children}

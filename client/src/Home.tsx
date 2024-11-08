@@ -104,32 +104,6 @@ const Home = () => {
   // const [selectedIssue, setSelectedIssue] = useState<any>(null);
   // const [incentiveAmount, setIncentiveAmount] = useState("");
 
-  const [githubUsername, setGithubUsername] = useState<string>("");
-
-  useEffect(() => {
-    const fetch = async () => {
-      if (userInfo) {
-        // setGithubUsername(userInfo.github_id);
-
-        // https://api.github.com/user/84982038
-        const {data} = await axios.get(
-          `https://api.github.com/user/${userInfo.github_id}`,
-          {
-            headers: {
-              Accept: "application/vnd.github+json",
-              Authorization: `Bearer ${import.meta.env.VITE_GITHUB_TOKEN}`,
-              "X-GitHub-Api-Version": "2022-11-28",
-            },
-          }
-        );
-
-        console.log(data, "data---github");
-        setGithubUsername(data.login);
-      }
-    };
-    fetch();
-  }, [userInfo]);
-
   useEffect(() => {
     if (!connected) {
       navigate("/connect");
@@ -312,7 +286,7 @@ const Home = () => {
 
   useEffect(() => {
     if (verifyDialog === false) {
-      // setStep(0);
+      setStep(0);
       setShouldGiveBountyState({
         verifyPROwnerLoading: false,
         verifyPROwnerSuccess: false,
@@ -409,9 +383,7 @@ const Home = () => {
                   </div>
                   <div className="w-full h-[80px] flex items-center px-4">
                     <div className="flex flex-col w-full">
-                      <p className="text-xl w-full">
-                        Verify Issue and PR and Connected
-                      </p>
+                      <p className="text-xl w-full">Transmit Request to Seda</p>
                       <p className="text-xs text-blue-800 max-w-sm truncate">
                         {/* https://explorer.story.foundation/ipa/0x5Ec29EA9fFfd4176f3E09B1Eb5c163adc8744c3D */}
                         {shouldGiveBountyState.prAndIssueMatchingError && (
@@ -435,12 +407,33 @@ const Home = () => {
                 </div>
               ) : (
                 step === 2 && (
-                  <div className="py-10">
+                  <div className="w-full flex justify-center items-center flex-col">
+                    <div className="p-5">
+                      {shouldGiveBountyState.isClaimableLoading ? (
+                        <Loader2 className="animate-spin h-20 w-20" />
+                      ) : shouldGiveBountyState.isClaimableSuccess ? (
+                        <div className="flex justify-center flex-col items-center gap-5">
+                          <CircleCheck className="h-20 w-20 text-green-700" />
+                          <p className="text-green-700">Bounty Claimable</p>
+                        </div>
+                      ) : (
+                        <div className="flex justify-center flex-col items-center gap-5">
+                          <CircleX className="h-20 w-20 text-red-700" />
+                          <p className="text-red-700">Bounty Not Claimable</p>
+                        </div>
+                      )}
+                    </div>
                     <div className="w-full">
                       <Button
                         className="w-full"
-                        onClick={() =>
-                          getLatestAnswerForIssue(githubIssues[index].id)
+                        onClick={
+                          () => getLatestAnswerForIssue(githubIssues[index].id)
+                          // executeWithValidAnswer(githubIssues[index].id)
+                        }
+                        // @ts-ignore
+                        disabled={
+                          shouldGiveBountyState.isClaimableLoading ||
+                          shouldGiveBountyState.isClaimableError
                         }
                       >
                         Claim Bounty
@@ -616,9 +609,13 @@ const Home = () => {
                       </TableCell>
                       <TableCell className="">
                         {item.state === "open" ? (
-                          <Badge className="bg-green-600">Open</Badge>
+                          <Badge className="bg-green-600 hover:bg-green-600">
+                            Open
+                          </Badge>
                         ) : (
-                          <Badge className="bg-red-600">Closed</Badge>
+                          <Badge className="bg-red-600 hover:bg-red-600">
+                            Closed
+                          </Badge>
                         )}
                       </TableCell>
                       <TableCell className="text-center">
