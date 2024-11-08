@@ -108,12 +108,12 @@ async function isPRLinkedToIssueAndMerged(prUrl, issueUrl) {
       });
       
       if(res.data.merged_at)
-      return 5;
+      return "5";
       else
-      return 1
+      return "1"
     }
     else{
-      return 1;
+      return "1";
     }
 
     return response.data;
