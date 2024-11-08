@@ -20,6 +20,8 @@ dotenv.config();
 
 // Extract issue number and repository details from the issue link
 
+let updateCounter = 0;
+
 
 
 function parseIssueUrl(issueUrl) {
@@ -87,6 +89,8 @@ async function isPRLinkedToIssueAndMerged(prUrl, issueUrl) {
     });
     
     console.log(allPRs, " all PRs");
+    updateCounter = updateCounter + 1;
+
     // // check if prUrl contains in allPRs
 
 
@@ -136,4 +140,8 @@ async function isPRLinkedToIssueAndMerged(prUrl, issueUrl) {
 // })();
 
 
-module.exports = {isPRLinkedToIssueAndMerged};
+async function getCount(){
+  return updateCounter;
+}
+
+module.exports = {isPRLinkedToIssueAndMerged, getCount};
