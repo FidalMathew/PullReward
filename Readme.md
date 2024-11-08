@@ -4,7 +4,7 @@
 
 **PullReward** is a decentralized platform that allows anyone to create their own wallet using WalletConnect using their Github Id and utilize Seda's Web3 oracle to verify GitHub pull request (PR) resolutions and reward developers with bounties issued by project maintainers. By connecting contributors with bounty-backed issues and using oracle technology for secure verification, PullReward enables a transparent, trustless system for rewarding open-source work. 
 
-**NOTE: Make sure to mention issue in the PR!**
+**NOTE: Make sure to mention issue in the PR**
 
 ---
 
