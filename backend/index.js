@@ -16,7 +16,7 @@ app.get('/api', (req, res) => {
 
 app.post('/verifyPR', async(req,res)=>{
     const result = await isPRLinkedToIssueAndMerged(req.body.prUrl, req.body.issueUrl);
-    console.log(result, 'result');
+    // console.log(result, 'result');
    return res.json({result}).status(200); 
     // return res.json({result: 'success'}).status(200);
 })
